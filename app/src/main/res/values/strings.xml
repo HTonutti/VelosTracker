@@ -18,4 +18,7 @@
     <string name="conf_follow_description">Permite que el mapa se mueva continuamente a la ubicación actual</string>
     <string name="conf_mode_title">Modo</string>
     <string name="conf_mode_description">Según la actividad que desarrolle se ajusta la velocidad de actualización</string>
+    <string name="auth_btn_google">GOOGLE</string>
+    <string name="txt_auth">Autenticación</string>
+    <string name="auth_image">Imagen de autenticación</string>
 </resources>

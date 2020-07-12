@@ -6,28 +6,66 @@ import android.preference.PreferenceManager;
 
 import java.math.BigDecimal;
 
+
 class Utils {
 
-    static final String KEY_REQUESTING_LOCATION_UPDATES = "requesting_location_updates";
+    static final String UPDATE_STATE = "update_state";
+    static final String PAUSED_UPDATE = "paused_update";
+    static final String MODE = "mode";
+    static final String TRACKING = "tracking";
+    static final String AUTH_PROVIDER = "auth_provider";
+    static final String USER_ID = "user_id";
     static private String selectedMode = "Ciclismo";
 
-    static boolean requestingLocationUpdates(Context context) {
+
+    static boolean getUpdateState(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false);
+                .getBoolean(UPDATE_STATE, false);
     }
 
-    static void setRequestingLocationUpdates(Context context, boolean requestingLocationUpdates) {
+    static void setUpdateState(Context context, boolean updateState) {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putBoolean(KEY_REQUESTING_LOCATION_UPDATES, requestingLocationUpdates)
+                .putBoolean(UPDATE_STATE, updateState)
                 .apply();
     }
 
-    static void setMode(String mode){
-        selectedMode = mode;
+    static boolean getPausedState(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PAUSED_UPDATE, false);
     }
 
-    static String getMode() {return selectedMode;}
+    static void setPausedState(Context context, boolean updateState) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(PAUSED_UPDATE, updateState)
+                .apply();
+    }
+
+    static boolean getTracking(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(TRACKING, false);
+    }
+
+    static void setTracking(Context context, boolean tracking) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(TRACKING, tracking)
+                .apply();
+    }
+
+    static void setMode(Context context, String mode){
+        selectedMode = mode;
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(selectedMode, mode)
+                .apply();
+    }
+
+    static String getMode(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(MODE, "Ciclismo");
+    }
 
     static Float getMtsRefresh(){
         switch (selectedMode){

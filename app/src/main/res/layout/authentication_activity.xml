@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorAccentBackground"
+    android:orientation="vertical">
+
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="100dp" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/txt_auth"
+        android:textSize="@dimen/text_size_main"
+        android:textColor="@color/colorText"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <Button
+        android:id="@+id/btn_auth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/margin_side_layout"
+        android:layout_marginRight="@dimen/margin_side_layout"
+        android:background="@color/colorAlertDialogTitle"
+        android:drawableStart="@drawable/logo_google"
+        android:paddingStart="20dp"
+        android:paddingEnd="50dp"
+        android:text="@string/auth_btn_google"
+        android:textAlignment="center" />
+
+</LinearLayout>

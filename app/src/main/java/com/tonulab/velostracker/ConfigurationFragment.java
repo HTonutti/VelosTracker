@@ -7,7 +7,6 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
@@ -16,7 +15,6 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Vector;
 
 public class ConfigurationFragment extends Fragment {
 
@@ -37,7 +35,8 @@ public class ConfigurationFragment extends Fragment {
         swt_follow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mainActivity.setMapTracking(isChecked);
+                Utils.setTracking(getActivity().getApplicationContext(), isChecked);
+//                mainActivity.setMapTracking(isChecked);
             }
         });
 
@@ -46,10 +45,10 @@ public class ConfigurationFragment extends Fragment {
             public void onClick(View v) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle("Seleccione el tipo de actividad")
-                    .setSingleChoiceItems(modesString, modes.indexOf(Utils.getMode()), new DialogInterface.OnClickListener() {
+                    .setSingleChoiceItems(modesString, modes.indexOf(Utils.getMode(getActivity().getApplicationContext())), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(final DialogInterface dialog, int which) {
-                            Utils.setMode(modes.get(which));
+                            Utils.setMode(getActivity().getApplicationContext(), modes.get(which));
                             Handler handler = new Handler();
                             handler.postDelayed(new Runnable() {
                                 public void run() {

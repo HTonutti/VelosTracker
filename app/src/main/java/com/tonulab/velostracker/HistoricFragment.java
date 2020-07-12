@@ -95,7 +95,7 @@ public class HistoricFragment extends Fragment {
         Pair<String, LinkedHashMap<String, DataPack>> pairAux = adapter.remove(posItemToDelete);
         firebaseManager.removeFromFirebase(pairAux.first);
         registers = pairAux.second;
-        firebaseManager.readFromFirebase();
+//        firebaseManager.readFromFirebase();
         adapter.notifyDataSetChanged();
         if (posItemToDelete != 0) {
             scroll(posItemToDelete - 1);

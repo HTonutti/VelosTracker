@@ -51,7 +51,6 @@ public class MainActivity extends AppCompatActivity implements
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
-
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements
             mBound = true;
             if (!toShow)
                 mService.requestSendUpdate();
-            if (Utils.requestingLocationUpdates(getApplicationContext())) {
+            if (Utils.getUpdateState(getApplicationContext())) {
                 tracing.setValue(true);
             } else {
                 tracing.setValue(false);
@@ -93,14 +92,26 @@ public class MainActivity extends AppCompatActivity implements
     private long time = 0;
     private String date = "";
     private BigDecimal avg = BigDecimal.valueOf(0);
+    private String userId;
+
     private ArrayList<PolyNode> polyNodeArray = null;
     private Stack<Integer> stackMenu = new Stack<>();
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+
+        String provider = getIntent().getExtras().getString(Utils.AUTH_PROVIDER);
+        userId = getIntent().getExtras().getString(Utils.USER_ID);
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putString(Utils.AUTH_PROVIDER, provider)
+                .putString(Utils.USER_ID, userId)
+                .apply();
 
         inicialization();
         setListeners();
@@ -128,6 +139,7 @@ public class MainActivity extends AppCompatActivity implements
         receiver.setMainActivity(this);
         firebaseManager = new FirebaseManager();
 
+        firebaseManager.setUserID(userId);
         firebaseManager.setHistoricFragment(historicFragment);
         historicFragment.setFirebaseManager(firebaseManager);
 
@@ -262,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements
                     if (!checkPermissions()) {
                         requestPermissions();
                     } else if(mBound){
-                        if (!Utils.requestingLocationUpdates(getApplicationContext())){
+                        if (!Utils.getUpdateState(getApplicationContext())){
                             stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
                             toShow = false;
                             distance = "0";
@@ -274,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
                 else if(mBound){
                     setButtonImage(true);
-                    if (Utils.requestingLocationUpdates(getApplicationContext())){
+                    if (Utils.getUpdateState(getApplicationContext())){
                         if (!toShow)
                             writeOnDatabase();
                         mService.removeLocationUpdates();
@@ -385,9 +397,11 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         // Update the buttons state depending on whether location updates are being requested.
-        if (s.equals(Utils.KEY_REQUESTING_LOCATION_UPDATES)) {
-            tracing.setValue(sharedPreferences.getBoolean(Utils.KEY_REQUESTING_LOCATION_UPDATES,
-                    false));
+        if (s.equals(Utils.UPDATE_STATE)) {
+            tracing.setValue(sharedPreferences.getBoolean(Utils.UPDATE_STATE,false));
+        }
+        else if (s.equals(Utils.TRACKING)){
+            setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
         }
     }
 
@@ -461,7 +475,7 @@ public class MainActivity extends AppCompatActivity implements
         updateAverage();
         updateTextViews();
 
-        if (!Utils.requestingLocationUpdates(getApplicationContext()) && time != 0 && !toShow)
+        if (!Utils.getUpdateState(getApplicationContext()) && time != 0 && !toShow)
             writeOnDatabase();
     }
 
