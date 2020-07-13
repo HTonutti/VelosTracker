@@ -36,6 +36,7 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -422,6 +423,20 @@ public class LocationUpdatesService extends Service {
         }
     }
 
+    public void reset(){
+        startTime = 0L;
+        accumulatedTime = 0L;
+        currentTime = 0L;
+        realDistance = BigDecimal.valueOf(0);
+        roundedDistance = 0D;
+        polyNodeArray = new ArrayList<>();
+        mLocation = null;
+        antLocation = null;
+        realDistance = BigDecimal.valueOf(0);
+        roundedDistance = 0D;
+        startDate = null;
+        firstTime = false;
+    }
 
     private class timeUpdateTask extends TimerTask
     {

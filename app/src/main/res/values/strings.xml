@@ -21,4 +21,8 @@
     <string name="auth_btn_google">GOOGLE</string>
     <string name="txt_auth">Autenticación</string>
     <string name="auth_image">Imagen de autenticación</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_pass">Contraseña</string>
+    <string name="auth_reg">Registrar</string>
+    <string name="auth_acc">Acceder</string>
 </resources>

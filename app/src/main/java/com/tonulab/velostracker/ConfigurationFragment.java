@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,13 +14,15 @@ import android.widget.Switch;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.fragment.app.Fragment;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ConfigurationFragment extends Fragment {
 
-    private ArrayList<String> modes = new ArrayList<>(Arrays.asList("Pedestrismo", "Ciclismo", "Automovilismo"));
-    private String[] modesString = {"Pedestrismo", "Ciclismo", "Automovilismo"};
+    private ArrayList<String> modes = new ArrayList<>(Arrays.asList(Utils.MODES.PEDESTRISMO.toString(), Utils.MODES.CICLISMO.toString(), Utils.MODES.AUTOMOVILISMO.toString()));
+    private String[] modesString = {Utils.MODES.PEDESTRISMO.toString(), Utils.MODES.CICLISMO.toString(), Utils.MODES.AUTOMOVILISMO.toString()};
 
     private MainActivity mainActivity;
 
@@ -30,6 +33,7 @@ public class ConfigurationFragment extends Fragment {
         final View rootView = inflater.inflate(R.layout.configuration, container, false);
         Switch swt_follow = rootView.findViewById(R.id.switch_follow);
         AppCompatImageButton btn_mode = rootView.findViewById(R.id.btn_mode);
+        AppCompatImageButton btn_logout = rootView.findViewById(R.id.btn_logout);
 
         swt_follow.setChecked(mainActivity.getMapTracking());
         swt_follow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -66,6 +70,12 @@ public class ConfigurationFragment extends Fragment {
             }
         });
 
+        btn_logout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainActivity.shutdown(true);
+            }
+        });
         return rootView;
     }
 }

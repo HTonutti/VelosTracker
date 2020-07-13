@@ -6,8 +6,38 @@ import android.preference.PreferenceManager;
 
 import java.math.BigDecimal;
 
+import static com.tonulab.velostracker.Utils.MODES.AUTOMOVILISMO;
+import static com.tonulab.velostracker.Utils.MODES.CICLISMO;
 
 class Utils {
+
+    public static String toHex(String input){
+        StringBuilder buf = new StringBuilder(200);
+        for (char ch: input.toCharArray()) {
+            if (buf.length() > 0)
+                buf.append(' ');
+            buf.append(String.format("%04x", (int) ch));
+        }
+        return buf.toString();
+    }
+
+    public enum MODES {
+        CICLISMO {
+            public String toString() {
+                return "Ciclismo";
+            }
+        },
+        PEDESTRISMO {
+            public String toString() {
+                return "Pedestrismo";
+            }
+        },
+        AUTOMOVILISMO {
+            public String toString() {
+                return "Automovilismo";
+            }
+        }
+    }
 
     static final String UPDATE_STATE = "update_state";
     static final String PAUSED_UPDATE = "paused_update";
@@ -15,7 +45,7 @@ class Utils {
     static final String TRACKING = "tracking";
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
-    static private String selectedMode = "Ciclismo";
+    static private String selectedMode = CICLISMO.toString();
 
 
     static boolean getUpdateState(Context context) {
@@ -58,27 +88,22 @@ class Utils {
         selectedMode = mode;
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putString(selectedMode, mode)
+                .putString(MODE, mode)
                 .apply();
     }
 
     static String getMode(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context)
-                .getString(MODE, "Ciclismo");
+                .getString(MODE, CICLISMO.toString());
     }
 
     static Float getMtsRefresh(){
-        switch (selectedMode){
-            case "Pedestrismo":{
-                return 2.0f;
-            }
-            case "Ciclismo":{
-                return 10.0f;
-            }
-            case "Automovilismo":{
-                return 30.0f;
-            }
-        }
+        if (selectedMode.equals(MODES.PEDESTRISMO.toString()))
+            return 2.0f;
+        if (selectedMode.equals(AUTOMOVILISMO.toString()))
+            return 30.0f;
+        if (selectedMode.equals(CICLISMO.toString()))
+            return 10.0f;
         return 10.0f;
     }
 
@@ -126,4 +151,5 @@ class Utils {
         int[] ints = {hours , mins , secs};
         return ints;
     }
+
 }

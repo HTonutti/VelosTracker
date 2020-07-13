@@ -3,6 +3,7 @@ package com.tonulab.velostracker;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Pair;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -80,7 +81,6 @@ public class HistoricFragment extends Fragment {
         }
 
         return rootView;
-
     }
 
     private void scroll(final int position){
@@ -110,6 +110,14 @@ public class HistoricFragment extends Fragment {
             if (firstTime){
                 auxArray.add("Cargando registros");
                 firstTime = false;
+                final Runnable r = new Runnable() {
+                    public void run() {
+                        if (!(listView.getAdapter() instanceof RegisterAdapter))
+                            noRegister();
+                    }
+                };
+                Handler handler = new Handler();
+                handler.postDelayed(r, 1000);
             }
             else
                 auxArray.add("No se tienen registros");

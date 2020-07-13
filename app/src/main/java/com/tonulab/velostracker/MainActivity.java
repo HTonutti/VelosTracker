@@ -29,6 +29,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -92,7 +93,8 @@ public class MainActivity extends AppCompatActivity implements
     private long time = 0;
     private String date = "";
     private BigDecimal avg = BigDecimal.valueOf(0);
-    private String userId;
+    private String userId = "";
+    private String provider = "";
 
     private ArrayList<PolyNode> polyNodeArray = null;
     private Stack<Integer> stackMenu = new Stack<>();
@@ -105,13 +107,20 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
-        String provider = getIntent().getExtras().getString(Utils.AUTH_PROVIDER);
-        userId = getIntent().getExtras().getString(Utils.USER_ID);
-        PreferenceManager.getDefaultSharedPreferences(this)
-                .edit()
-                .putString(Utils.AUTH_PROVIDER, provider)
-                .putString(Utils.USER_ID, userId)
-                .apply();
+        if (getIntent().hasExtra(Utils.AUTH_PROVIDER) && getIntent().hasExtra(Utils.USER_ID)){
+            provider = getIntent().getExtras().getString(Utils.AUTH_PROVIDER);
+            userId = getIntent().getExtras().getString(Utils.USER_ID);
+            PreferenceManager.getDefaultSharedPreferences(this)
+                    .edit()
+                    .putString(Utils.AUTH_PROVIDER, provider)
+                    .putString(Utils.USER_ID, userId)
+                    .apply();
+        }else{
+            provider = PreferenceManager.getDefaultSharedPreferences(this)
+                    .getString(Utils.AUTH_PROVIDER, "");
+            userId = PreferenceManager.getDefaultSharedPreferences(this)
+                    .getString(Utils.USER_ID, "");
+        }
 
         inicialization();
         setListeners();
@@ -203,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements
         if (frag) {
             stackMenu.pop();
             if (stackMenu.size() == 0)
-                finish();
+                shutdown(false);
             else
                 navView.setSelectedItemId(stackMenu.peek());
         }
@@ -496,4 +505,31 @@ public class MainActivity extends AppCompatActivity implements
         txtAvg.setText(String.format("%s km/h", avg));
     }
 
+    public void shutdown(boolean logout){
+        mService.reset();
+        mapTracking = false;
+        toShow = false;
+        userId = "";
+        provider = "";
+        stackMenu = new Stack<>();
+        fm = getSupportFragmentManager();
+//        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+//        if (mBound) {
+//            unbindService(mServiceConnection);
+//            mBound = false;
+//        }
+//        PreferenceManager.getDefaultSharedPreferences(this)
+//                .unregisterOnSharedPreferenceChangeListener(this);
+        if (logout){
+            FirebaseAuth.getInstance().signOut();
+            PreferenceManager.getDefaultSharedPreferences(this)
+                    .edit()
+                    .putString(Utils.AUTH_PROVIDER, "")
+                    .putString(Utils.USER_ID, "")
+                    .apply();
+            this.finishAffinity();
+            startActivity(new Intent(this, AuthenticationActivity.class));
+        }else
+            this.finishAffinity();
+    }
 }

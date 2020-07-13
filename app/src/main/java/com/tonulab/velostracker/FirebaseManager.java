@@ -41,7 +41,7 @@ public class FirebaseManager {
 
     public void writeOnFirebase(DataPack reg){
         if (!checkUserId()){
-            mDatabase.child("Recorridos").child(userID).push().setValue(reg, new DatabaseReference.CompletionListener() {
+            mDatabase.child(userID).child("Recorridos").push().setValue(reg, new DatabaseReference.CompletionListener() {
                 @Override
                 public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
                     if (error != null)
@@ -58,7 +58,7 @@ public class FirebaseManager {
 
     public void readFromFirebase() {
         if (!checkUserId()) {
-            mDatabase.child("Recorridos").child(userID).addValueEventListener(new ValueEventListener() {
+            mDatabase.child(userID).child("Recorridos").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     registers = new LinkedHashMap<>();
@@ -69,7 +69,7 @@ public class FirebaseManager {
                     Log.i(TAG, nroReg + " registros leídos");
 
                     for (final DataSnapshot auxSnapshot : snapshot.getChildren()) {
-                        mDatabase.child("Recorridos").child(userID).child(auxSnapshot.getKey()).addValueEventListener(new ValueEventListener() {
+                        mDatabase.child(userID).child("Recorridos").child(auxSnapshot.getKey()).addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 DataPack data = auxSnapshot.getValue(DataPack.class);
@@ -98,14 +98,14 @@ public class FirebaseManager {
     }
 
     public void removeFromFirebase(String key){
-        mDatabase.child("Recorridos").child(userID).child(key).removeValue();
+        mDatabase.child(userID).child("Recorridos").child(key).removeValue();
         Log.i(TAG, "Registro eliminado");
     }
 
     private void removeAllFromFirebase(){
         String[] arrayKeys = registers.keySet().toArray(new String[0]);
         for (int i = 0; i < registers.size(); i++) {
-            mDatabase.child("Recorridos").child(userID).child(arrayKeys[i]).removeValue();
+            mDatabase.child(userID).child("Recorridos").child(arrayKeys[i]).removeValue();
         }
         Log.i(TAG, "Registros eliminados completamente");
     }

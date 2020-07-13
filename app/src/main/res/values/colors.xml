@@ -8,6 +8,7 @@
     <color name="colorAccent">#FFFF00</color>
     <color name="colorAccentBackground">#D5D5D2</color>
     <color name="colorIconMenu">#FFFFFF</color>
+    <color name="colorAuthBackground">#FFFFFF</color>
     <color name="colorAlertDialogTitle">#FFFFFF</color>
     <color name="colorAlertDialogButtons">#FFFF00</color>
     <color name="colorAlertDialogBackground">#60605E</color>

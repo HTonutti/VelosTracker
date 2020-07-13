@@ -26,13 +26,68 @@
         android:layout_width="match_parent"
         android:layout_height="10dp" />
 
-    <Button
-        android:id="@+id/btn_auth"
+    <EditText
+        android:id="@+id/txt_mail"
+        style="@style/EditTextsAuthentication"
+        android:autofillHints=""
+        android:hint="@string/auth_email"
+        android:inputType="textWebEmailAddress" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <EditText
+        android:id="@+id/txt_pass"
+        style="@style/EditTextsAuthentication"
+        android:autofillHints=""
+        android:hint="@string/auth_pass"
+        android:inputType="textPassword" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="@dimen/margin_side_layout"
         android:layout_marginRight="@dimen/margin_side_layout"
-        android:background="@color/colorAlertDialogTitle"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_auth_reg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@color/colorText"
+            android:textColor="@color/colorAccent"
+            android:text="@string/auth_reg" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btn_auth_acc"
+            android:background="@color/colorAccent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/auth_acc" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <Button
+        android:id="@+id/btn_auth_google"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/margin_side_layout"
+        android:layout_marginRight="@dimen/margin_side_layout"
+        android:background="@color/colorAuthBackground"
         android:drawableStart="@drawable/logo_google"
         android:paddingStart="20dp"
         android:paddingEnd="50dp"
