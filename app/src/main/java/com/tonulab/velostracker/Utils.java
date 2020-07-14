@@ -11,16 +11,6 @@ import static com.tonulab.velostracker.Utils.MODES.CICLISMO;
 
 class Utils {
 
-    public static String toHex(String input){
-        StringBuilder buf = new StringBuilder(200);
-        for (char ch: input.toCharArray()) {
-            if (buf.length() > 0)
-                buf.append(' ');
-            buf.append(String.format("%04x", (int) ch));
-        }
-        return buf.toString();
-    }
-
     public enum MODES {
         CICLISMO {
             public String toString() {
@@ -102,8 +92,6 @@ class Utils {
             return 2.0f;
         if (selectedMode.equals(AUTOMOVILISMO.toString()))
             return 30.0f;
-        if (selectedMode.equals(CICLISMO.toString()))
-            return 10.0f;
         return 10.0f;
     }
 

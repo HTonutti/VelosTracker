@@ -97,6 +97,8 @@ public class LocationUpdatesService extends Service {
 
     private Handler mServiceHandler;
 
+    private FirebaseManager firebaseManager = null;
+
     // Ubicacion actual
     private Location mLocation;
 
@@ -127,6 +129,7 @@ public class LocationUpdatesService extends Service {
     @Override
     public void onCreate() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        firebaseManager = new FirebaseManager();
 
         mLocationCallback = new LocationCallback() {
             @Override
@@ -269,12 +272,11 @@ public class LocationUpdatesService extends Service {
         try {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             Utils.setUpdateState(this, false);
+            writeOnDatabase();
             timer.cancel();
         } catch (SecurityException unlikely) {
             Utils.setUpdateState(this, true);
             Log.e(TAG, "Permiso de ubicación perdido. No se pudieron solicitar actualizaciones " + unlikely);
-        } catch (NullPointerException e){
-            Log.e(TAG, "Puntero nulo " + e.getMessage());
         }
     }
 
@@ -436,6 +438,22 @@ public class LocationUpdatesService extends Service {
         roundedDistance = 0D;
         startDate = null;
         firstTime = false;
+    }
+
+    private void writeOnDatabase() {
+        if (startDate.equals(""))
+            startDate = "Sin fecha";
+        BigDecimal avg = BigDecimal.valueOf(0);
+        try{
+            if (currentTime != 0 && !realDistance.equals(BigDecimal.valueOf(0)))
+                avg = realDistance.multiply(BigDecimal.valueOf(3600)).divide(BigDecimal.valueOf(currentTime), 1, RoundingMode.HALF_DOWN);
+        }catch (NumberFormatException nfe) {
+            System.out.println("NumberFormatException: " + nfe.getMessage());
+        }catch (ArithmeticException ae) {
+            System.out.println("ArithmeticException: " + ae.getMessage());
+        }
+        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate, String.valueOf(avg), polyNodeArray);
+        firebaseManager.writeOnFirebase(reg);
     }
 
     private class timeUpdateTask extends TimerTask

@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements
     private ConfigurationFragment configurationFragment = null;
     private ElevationFragment elevationFragment = null;
     private FragmentManager fm = getSupportFragmentManager();
-    private FirebaseManager firebaseManager = null;
 
     private TextView txtDistance;
     private TextView txtTime;
@@ -91,7 +90,6 @@ public class MainActivity extends AppCompatActivity implements
     private boolean toShow = false;
     private String distance = "0";
     private long time = 0;
-    private String date = "";
     private BigDecimal avg = BigDecimal.valueOf(0);
     private String userId = "";
     private String provider = "";
@@ -107,6 +105,20 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
+        setUserProvider();
+        inicialization();
+        setListeners();
+
+        if (!checkPermissions()) {
+            requestPermissions();
+            navView.setSelectedItemId(R.id.menu_setting);
+        }
+        else {
+            navView.setSelectedItemId(R.id.menu_map);
+        }
+    }
+
+    private void setUserProvider() {
         if (getIntent().hasExtra(Utils.AUTH_PROVIDER) && getIntent().hasExtra(Utils.USER_ID)){
             provider = getIntent().getExtras().getString(Utils.AUTH_PROVIDER);
             userId = getIntent().getExtras().getString(Utils.USER_ID);
@@ -121,35 +133,27 @@ public class MainActivity extends AppCompatActivity implements
             userId = PreferenceManager.getDefaultSharedPreferences(this)
                     .getString(Utils.USER_ID, "");
         }
-
-        inicialization();
-        setListeners();
-
-        if (!checkPermissions()) {
-            requestPermissions();
-            navView.setSelectedItemId(R.id.menu_setting);
-        }
-        else {
-            navView.setSelectedItemId(R.id.menu_map);
-        }
-
-
     }
 
     private void inicialization() {
         mapsFragment = new MapsFragment();
+
         configurationFragment = new ConfigurationFragment();
         configurationFragment.setMainActivity(this);
-        historicFragment = new HistoricFragment();
-        historicFragment.setMainActivity(this);
+
         elevationFragment = new ElevationFragment();
         elevationFragment.setMainActivity(this);
+
         receiver = new Receiver();
         receiver.setMainActivity(this);
-        firebaseManager = new FirebaseManager();
 
-        firebaseManager.setUserID(userId);
-        firebaseManager.setHistoricFragment(historicFragment);
+        historicFragment = new HistoricFragment();
+        historicFragment.setMainActivity(this);
+
+        FirebaseManager firebaseManager = new FirebaseManager();
+        FirebaseManager.setUserID(userId);
+        FirebaseManager.setHistoricFragment(historicFragment);
+
         historicFragment.setFirebaseManager(firebaseManager);
 
         tracing = new ActiveVariable();
@@ -288,6 +292,7 @@ public class MainActivity extends AppCompatActivity implements
                             toShow = false;
                             distance = "0";
                             time = 0;
+                            avg = BigDecimal.valueOf(0);
                             elevationFragment.resetPoints();
                             mService.requestLocationUpdates();
                         }
@@ -296,8 +301,6 @@ public class MainActivity extends AppCompatActivity implements
                 else if(mBound){
                     setButtonImage(true);
                     if (Utils.getUpdateState(getApplicationContext())){
-                        if (!toShow)
-                            writeOnDatabase();
                         mService.removeLocationUpdates();
                     }
                 }
@@ -310,14 +313,6 @@ public class MainActivity extends AppCompatActivity implements
                 tracing.setValue(!tracing.getValue());
             }
         });
-    }
-
-    private void writeOnDatabase() {
-        toShow = true;
-        if (date.equals(""))
-            date = "Sin fecha";
-        DataPack reg = new DataPack(distance, String.valueOf(time), date, String.valueOf(avg), polyNodeArray);
-        firebaseManager.writeOnFirebase(reg);
     }
 
     /**
@@ -404,12 +399,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         // Update the buttons state depending on whether location updates are being requested.
-        if (s.equals(Utils.UPDATE_STATE)) {
+        if (key.equals(Utils.UPDATE_STATE)) {
             tracing.setValue(sharedPreferences.getBoolean(Utils.UPDATE_STATE,false));
         }
-        else if (s.equals(Utils.TRACKING)){
+        else if (key.equals(Utils.TRACKING)){
             setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
         }
     }
@@ -421,16 +416,12 @@ public class MainActivity extends AppCompatActivity implements
             bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_stop, getTheme()));
     }
 
-    public Boolean getTracing(){
-        return tracing.getValue();
-    }
-
     public void setMapTracking(boolean mapTracking){
         this.mapTracking = mapTracking;
     }
 
-    public boolean getMapTracking(){
-        return this.mapTracking;
+    public boolean getTracing(){
+        return tracing.getValue();
     }
 
     public void showRegister(DataPack dataPack){
@@ -443,9 +434,13 @@ public class MainActivity extends AppCompatActivity implements
             Location auxLocation = new Location("");
             auxLocation.setLatitude(polyNodeArray.get(0).getLatitude());
             auxLocation.setLongitude(polyNodeArray.get(0).getLongitude());
-            mapTracking = true;
-            updateLocation(auxLocation);
-            mapTracking = false;
+            if (mapTracking)
+                updateLocation(auxLocation);
+            else{
+                mapTracking = true;
+                updateLocation(auxLocation);
+                mapTracking = false;
+            }
         }
     }
 
@@ -478,14 +473,10 @@ public class MainActivity extends AppCompatActivity implements
                 elevationFragment.setPoints(polyNodeArray);
             }
         }
-        if (dataPack.getDate() != null)
-            date = dataPack.getDate();
 
         updateAverage();
         updateTextViews();
 
-        if (!Utils.getUpdateState(getApplicationContext()) && time != 0 && !toShow)
-            writeOnDatabase();
     }
 
     private void updateAverage(){
@@ -506,20 +497,13 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void shutdown(boolean logout){
-        mService.reset();
-        mapTracking = false;
-        toShow = false;
-        userId = "";
-        provider = "";
-        stackMenu = new Stack<>();
-        fm = getSupportFragmentManager();
-//        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
-//        if (mBound) {
-//            unbindService(mServiceConnection);
-//            mBound = false;
-//        }
-//        PreferenceManager.getDefaultSharedPreferences(this)
-//                .unregisterOnSharedPreferenceChangeListener(this);
+//        mService.reset();
+//        mapTracking = false;
+//        toShow = false;
+//        userId = "";
+//        provider = "";
+//        stackMenu = new Stack<>();
+//        fm = getSupportFragmentManager();
         if (logout){
             FirebaseAuth.getInstance().signOut();
             PreferenceManager.getDefaultSharedPreferences(this)
