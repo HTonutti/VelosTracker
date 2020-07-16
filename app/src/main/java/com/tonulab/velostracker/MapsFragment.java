@@ -21,6 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -34,10 +35,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     //Latitud y longitud de donde se situa la camara
     private double lat;
     private double lon;
+    private CameraPosition lastViewedLocation = null;
+    FusedLocationProviderClient fusedLocationClient = null;
 
     private boolean startLocation = true;
 
     private View view;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         if (view != null) {
@@ -65,26 +69,33 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                 && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-        }else{
+        } else {
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
             fusedLocationClient.getLastLocation()
                     .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
                             // Got last known location. In some rare situations this can be null.
-                            if (location != null && startLocation) {
-                                // Logic to handle location object
+                            if (location != null && startLocation && lastViewedLocation == null){
                                 setLat(location.getLatitude());
                                 setLon(location.getLongitude());
-                                moveCamera(16);
-                            }else
+                                moveCamera();
+                            } else
                                 startLocation = true;
                         }
                     });
+            if (lastViewedLocation != null && startLocation)
+                mMap.moveCamera(CameraUpdateFactory.newCameraPosition(lastViewedLocation));
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        lastViewedLocation = mMap.getCameraPosition();
     }
 
     //Setters, getters y demas utilidades
@@ -128,19 +139,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         mMap.clear();
     }
 
-    public void moveCamera(Integer zoom) {
+    public void moveCamera() {
         LatLng position = new LatLng(lat, lon);
         if (getMapState()){
-            if(zoom != null) {
-                CameraUpdate localizacion = CameraUpdateFactory.newLatLngZoom(position, zoom);
-                mMap.moveCamera(localizacion);
-//            mMap.animateCamera(localizacion);
-            }
-            else {
-                CameraUpdate localizacion = CameraUpdateFactory.newLatLng(position);
-                mMap.moveCamera(localizacion);
-            }
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 16));
         }
-
     }
+
 }

@@ -449,7 +449,7 @@ public class MainActivity extends AppCompatActivity implements
         mapsFragment.setLat(loc.getLatitude());
         mapsFragment.setLon(loc.getLongitude());
         if (mapTracking)
-            mapsFragment.moveCamera(16);
+            mapsFragment.moveCamera();
     }
 
     public void updateTime(long time){
