@@ -30,13 +30,14 @@ import java.util.ArrayList;
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private FusedLocationProviderClient fusedLocationClient;
 
     //Latitud y longitud de donde se situa la camara
     private double lat;
     private double lon;
 
-    private static View view;
+    private boolean startLocation = true;
+
+    private View view;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         if (view != null) {
@@ -68,18 +69,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
             fusedLocationClient.getLastLocation()
                     .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
                             // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
+                            if (location != null && startLocation) {
                                 // Logic to handle location object
                                 setLat(location.getLatitude());
                                 setLon(location.getLongitude());
                                 moveCamera(16);
-                            }
+                            }else
+                                startLocation = true;
                         }
                     });
         }
@@ -102,9 +104,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         return this.lon;
     }
 
-    public boolean getMapState() {if(mMap == null) return false; else return true; }
+    public boolean getMapState() {
+        return mMap != null;
+    }
 
-    public void activeMap() {onMapReady(mMap);}
+    public void setStartLocation(boolean startLocation){
+        this.startLocation = startLocation;
+    }
 
     public void updatePolyline(ArrayList<PolyNode> polyNodeArray){
         if (getMapState()){

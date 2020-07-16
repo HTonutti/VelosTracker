@@ -32,11 +32,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -97,6 +97,8 @@ public class LocationUpdatesService extends Service {
 
     private Handler mServiceHandler;
 
+    private FirebaseManager firebaseManager = null;
+
     // Ubicacion actual
     private Location mLocation;
 
@@ -106,7 +108,7 @@ public class LocationUpdatesService extends Service {
 
     private BigDecimal realDistance = BigDecimal.valueOf(0);
 
-    private Double distance = 0D;
+    private Double roundedDistance = 0D;
 
     private String startDate;
 
@@ -115,6 +117,8 @@ public class LocationUpdatesService extends Service {
     private Long startTime;
 
     private Long currentTime = 0L;
+
+    private Long accumulatedTime = 0L;
 
     private boolean startedFromNotification;
 
@@ -125,6 +129,7 @@ public class LocationUpdatesService extends Service {
     @Override
     public void onCreate() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        firebaseManager = FirebaseManager.getInstance();
 
         mLocationCallback = new LocationCallback() {
             @Override
@@ -206,9 +211,8 @@ public class LocationUpdatesService extends Service {
         // Called when the last client (MainActivity in case of this sample) unbinds from this
         // service. If this method is called due to a configuration change in MainActivity, we
         // do nothing. Otherwise, we make this service a foreground service.
-        if (!mChangingConfiguration && Utils.requestingLocationUpdates(this)) {
+        if (!mChangingConfiguration && Utils.getUpdateState(this)) {
             Log.i(TAG, "Ejecutando servicio en primer plano");
-
             startForeground(NOTIFICATION_ID, getNotification());
         }
         return true; // Ensures onRebind() is called when a client re-binds.
@@ -224,29 +228,39 @@ public class LocationUpdatesService extends Service {
      * {@link SecurityException}.
      */
     public void requestLocationUpdates() {
-        startTime = System.currentTimeMillis();
-        currentTime = 0L;
-        realDistance = BigDecimal.valueOf(0);
-        distance = 0D;
-        polyNodeArray = new ArrayList<>();
-        DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-        startDate = DFormat.format(new Date());
-        MINIMUN_DISTANCE_IN_METERS = Utils.getMtsRefresh();
-        firstTime = true;
+        if (!Utils.getPausedState(this)) {
+            startTime = System.currentTimeMillis();
+            currentTime = 0L;
+            realDistance = BigDecimal.valueOf(0);
+            roundedDistance = 0D;
+            polyNodeArray = new ArrayList<>();
+            DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+            startDate = DFormat.format(new Date());
+            MINIMUN_DISTANCE_IN_METERS = Utils.getMtsRefresh();
 
+            startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
+        }
+        else
+            Utils.setPausedState(this, true);
+        firstTime = true;
         timer = new Timer();
         timer.scheduleAtFixedRate(new timeUpdateTask(), 0, 1000);
 
         Log.i(TAG, "Requiriendo actualizaciones de ubicación");
-        Utils.setRequestingLocationUpdates(this, true);
-        startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
+        Utils.setUpdateState(this, true);
         try {
             mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                     mLocationCallback, Looper.myLooper());
         } catch (SecurityException unlikely) {
-            Utils.setRequestingLocationUpdates(this, false);
+            Utils.setUpdateState(this, false);
             Log.e(TAG, "Permiso de ubicación perdido. No se pudieron solicitar actualizaciones" + unlikely);
         }
+    }
+
+    private void pauseLocationUpdate(){
+        accumulatedTime = accumulatedTime + currentTime;
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        Utils.setPausedState(this, true);
     }
 
     /**
@@ -257,21 +271,20 @@ public class LocationUpdatesService extends Service {
         Log.i(TAG, "Finalizando actualizaciones de ubicación");
         try {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
-            Utils.setRequestingLocationUpdates(this, false);
+            Utils.setUpdateState(this, false);
+            writeOnDatabase();
             timer.cancel();
         } catch (SecurityException unlikely) {
-            Utils.setRequestingLocationUpdates(this, true);
+            Utils.setUpdateState(this, true);
             Log.e(TAG, "Permiso de ubicación perdido. No se pudieron solicitar actualizaciones " + unlikely);
-        } catch (NullPointerException e){
-            Log.e(TAG, "Puntero nulo " + e.getMessage());
         }
     }
 
     public void requestSendUpdate(){
         Intent intent = new Intent(ACTION_BROADCAST);
-        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(distance), String.valueOf(currentTime), startDate, null, polyNodeArray));
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
-        if (!Utils.requestingLocationUpdates(getApplicationContext()))
+        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        if (!Utils.getUpdateState(this))
             stopSelf();
     }
 
@@ -281,7 +294,7 @@ public class LocationUpdatesService extends Service {
     private Notification getNotification() {
         Intent intent = new Intent(this, LocationUpdatesService.class);
 
-        CharSequence text = Utils.getNotificationText(BigDecimal.valueOf(distance), currentTime);
+        CharSequence text = Utils.getNotificationText(BigDecimal.valueOf(roundedDistance), currentTime);
 
         // Extra to help us figure out if we arrived in onStartCommand via the notification or not.
         intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true);
@@ -293,6 +306,8 @@ public class LocationUpdatesService extends Service {
         // The PendingIntent to launch activity.
         PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
+
+//        PendingIntent pauseIntent = PendingIntent.getForegroundService();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
 //                .addAction(R.drawable.ic_play, "Ir a la aplicación",
@@ -306,6 +321,7 @@ public class LocationUpdatesService extends Service {
                 .setPriority(Notification.PRIORITY_LOW)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setTicker(text)
+                .setOngoing(true)
                 .setWhen(System.currentTimeMillis());
 
         return builder.build();
@@ -336,7 +352,7 @@ public class LocationUpdatesService extends Service {
         Intent intent = new Intent(ACTION_BROADCAST);
         refreshDistance(location);
         if (firstTime){
-            polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), distance));
+            polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), roundedDistance));
             firstTime = false;
         }
         intent.putExtra(EXTRA_LOCATION, mLocation);
@@ -402,26 +418,56 @@ public class LocationUpdatesService extends Service {
         mLocation = loc;
         if (distanceRes[0] > MINIMUN_DISTANCE_IN_METERS) {
             realDistance = BigDecimal.valueOf(distanceRes[0]).divide(BigDecimal.valueOf(1000)).add(realDistance);
-            distance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
-            Log.i(TAG, "Distancia actualizada: " + distance);
-            polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), distance));
+            roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
+            Log.i(TAG, "Distancia actualizada: " + realDistance);
+            polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), roundedDistance));
             antLocation = auxLocation;
         }
     }
 
+    public void reset(){
+        startTime = 0L;
+        accumulatedTime = 0L;
+        currentTime = 0L;
+        realDistance = BigDecimal.valueOf(0);
+        roundedDistance = 0D;
+        polyNodeArray = new ArrayList<>();
+        mLocation = null;
+        antLocation = null;
+        realDistance = BigDecimal.valueOf(0);
+        roundedDistance = 0D;
+        startDate = null;
+        firstTime = false;
+    }
+
+    private void writeOnDatabase() {
+        if (startDate.equals(""))
+            startDate = "Sin fecha";
+        BigDecimal avg = BigDecimal.valueOf(0);
+        try{
+            if (currentTime != 0 && !realDistance.equals(BigDecimal.valueOf(0)))
+                avg = realDistance.multiply(BigDecimal.valueOf(3600)).divide(BigDecimal.valueOf(currentTime), 1, RoundingMode.HALF_DOWN);
+        }catch (NumberFormatException nfe) {
+            System.out.println("NumberFormatException: " + nfe.getMessage());
+        }catch (ArithmeticException ae) {
+            System.out.println("ArithmeticException: " + ae.getMessage());
+        }
+        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate, String.valueOf(avg), polyNodeArray);
+        firebaseManager.writeOnFirebase(reg);
+    }
 
     private class timeUpdateTask extends TimerTask
     {
         public void run()
         {
-            currentTime = (System.currentTimeMillis() - startTime) / 1000;
+            currentTime = accumulatedTime + (System.currentTimeMillis() - startTime) / 1000;
             // Notify anyone listening for broadcasts about the new location.
             Intent intent = new Intent(ACTION_BROADCAST);
-            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(distance), String.valueOf(currentTime), startDate, null, polyNodeArray));
-            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
+            LocalBroadcastManager.getInstance(LocationUpdatesService.this).sendBroadcast(intent);
 
             // Update notification content if running as a foreground service.
-            if (serviceIsRunningInForeground(getApplicationContext())) {
+            if (serviceIsRunningInForeground(LocationUpdatesService.this)) {
                 mNotificationManager.notify(NOTIFICATION_ID, getNotification());
             }
         }

@@ -5,12 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-
 /**
  * Receiver for broadcasts sent by {@link LocationUpdatesService}.
  */
@@ -32,20 +26,5 @@ public class Receiver extends BroadcastReceiver {
         if (dataPack != null){
             mainActivity.updateDataPack(dataPack);
         }
-
-//        String distance = intent.getStringExtra(LocationUpdatesService.EXTRA_DISTANCE);
-//        if (distance != null){
-//            mainActivity.updateDistance(distance);
-//        }
-//
-//        Long time = intent.getLongExtra(LocationUpdatesService.EXTRA_TIME, -1);
-//        if (time != -1){
-//            mainActivity.updateTime(time);
-//        }
-//
-//        ArrayList<PolyNode> polyline = intent.getParcelableArrayListExtra(LocationUpdatesService.EXTRA_POLYLINE);
-//        if (polyline != null){
-//            mainActivity.updatePolyline(polyline);
-//        }
     }
 }

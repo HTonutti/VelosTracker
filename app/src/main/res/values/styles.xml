@@ -8,6 +8,10 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="SplashTheme" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@drawable/splashscreen</item>
+    </style>
+
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -35,9 +39,19 @@
 
     <style name="TextViewsItemTitle">
         <item name="android:textColor">@color/colorTextItemTitle</item>
-<!--        <item name="android:fontFamily">@font/roboto_bold</item>-->
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="EditTextsAuthentication">
+        <item name="android:textSize">@dimen/text_size_auth</item>
+        <item name="android:background">@color/colorAuthBackground</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginLeft">@dimen/margin_side_layout</item>
+        <item name="android:layout_marginRight">@dimen/margin_side_layout</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
     </style>
 
     <style name="ConfigurationItemsTitle">
