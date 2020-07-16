@@ -15,28 +15,36 @@ import java.util.LinkedHashMap;
 
 public final class FirebaseManager {
 
-    private static HistoricFragment historicFragment;
-    private static DatabaseReference mDatabase;
-    private static LinkedHashMap<String, DataPack> registers = new LinkedHashMap<>();
-    private static String TAG = FirebaseManager.class.getSimpleName();
-    private static long nroReg = 0;
-    private static int contRegRead = 0;
-    private static String userID = null;
+    private static FirebaseManager firebaseManager = null;
 
-    public static void setHistoricFragment(HistoricFragment historicFragment){
-        FirebaseManager.historicFragment = historicFragment;
+    private HistoricFragment historicFragment;
+    private DatabaseReference mDatabase;
+    private LinkedHashMap<String, DataPack> registers = new LinkedHashMap<>();
+    private String TAG = FirebaseManager.class.getSimpleName();
+    private long nroReg = 0;
+    private int contRegRead = 0;
+    private String userID = null;
+
+    public void setHistoricFragment(HistoricFragment historicFragment){
+        this.historicFragment = historicFragment;
     }
 
-    public static void setUserID(String userID){
-        FirebaseManager.userID = userID;
+    public void setUserID(String userID){
+        this.userID = userID;
         readFromFirebase();
     }
 
-    public FirebaseManager(){
+    private FirebaseManager(){
         mDatabase = FirebaseDatabase.getInstance().getReference();
     }
 
-    public static void writeOnFirebase(DataPack reg){
+    public static FirebaseManager getInstance(){
+        if (firebaseManager == null)
+            firebaseManager = new FirebaseManager();
+        return firebaseManager;
+    }
+
+    public  void writeOnFirebase(DataPack reg){
         if (!checkUserId()){
             mDatabase.child(userID).child("Recorridos").push().setValue(reg, new DatabaseReference.CompletionListener() {
                 @Override
@@ -53,7 +61,7 @@ public final class FirebaseManager {
             Log.e(TAG, "Problema con el id de usuario al escribir en la base de datos");
     }
 
-    public static void readFromFirebase() {
+    public void readFromFirebase() {
         if (!checkUserId()) {
             mDatabase.child(userID).child("Recorridos").addValueEventListener(new ValueEventListener() {
                 @Override
@@ -94,12 +102,12 @@ public final class FirebaseManager {
             Log.e(TAG, "Problema con el id de usuario al leer en la base de datos");
     }
 
-    public static void removeFromFirebase(String key){
+    public void removeFromFirebase(String key){
         mDatabase.child(userID).child("Recorridos").child(key).removeValue();
         Log.i(TAG, "Registro eliminado");
     }
 
-    private static void removeAllFromFirebase(){
+    private void removeAllFromFirebase(){
         String[] arrayKeys = registers.keySet().toArray(new String[0]);
         for (int i = 0; i < registers.size(); i++) {
             mDatabase.child(userID).child("Recorridos").child(arrayKeys[i]).removeValue();
@@ -107,7 +115,7 @@ public final class FirebaseManager {
         Log.i(TAG, "Registros eliminados completamente");
     }
 
-    private static boolean checkUserId(){
+    private boolean checkUserId(){
         return userID == null || userID.equals("");
     }
 

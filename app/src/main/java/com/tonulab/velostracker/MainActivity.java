@@ -150,9 +150,9 @@ public class MainActivity extends AppCompatActivity implements
         historicFragment = new HistoricFragment();
         historicFragment.setMainActivity(this);
 
-        FirebaseManager firebaseManager = new FirebaseManager();
-        FirebaseManager.setUserID(userId);
-        FirebaseManager.setHistoricFragment(historicFragment);
+        FirebaseManager firebaseManager = FirebaseManager.getInstance();
+        firebaseManager.setUserID(userId);
+        firebaseManager.setHistoricFragment(historicFragment);
 
         historicFragment.setFirebaseManager(firebaseManager);
 
@@ -427,6 +427,7 @@ public class MainActivity extends AppCompatActivity implements
     public void showRegister(DataPack dataPack){
         toShow = true;
         elevationFragment.resetPoints();
+        mapsFragment.setStartLocation(false);
         navView.setSelectedItemId(R.id.menu_map);
         tracing.setValue(false);
         updateDataPack(dataPack);

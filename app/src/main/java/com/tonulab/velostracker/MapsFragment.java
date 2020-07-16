@@ -80,8 +80,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                                 setLat(location.getLatitude());
                                 setLon(location.getLongitude());
                                 moveCamera(16);
+                            }else
                                 startLocation = true;
-                            }
                         }
                     });
         }
@@ -106,6 +106,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     public boolean getMapState() {
         return mMap != null;
+    }
+
+    public void setStartLocation(boolean startLocation){
+        this.startLocation = startLocation;
     }
 
     public void updatePolyline(ArrayList<PolyNode> polyNodeArray){
