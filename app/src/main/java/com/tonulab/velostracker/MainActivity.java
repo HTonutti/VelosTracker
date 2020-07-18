@@ -18,6 +18,7 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -83,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements
     private TextView txtTime;
     private TextView txtAvg;
     private FloatingActionButton bPlay;
+    private Button bStop;
     private BottomNavigationView navView;
 
     private ActiveVariable tracing;
@@ -160,7 +162,8 @@ public class MainActivity extends AppCompatActivity implements
         txtDistance = findViewById(R.id.txt_dist);
         txtTime = findViewById(R.id.txt_time);
         txtAvg = findViewById(R.id.txt_avg);
-        bPlay = findViewById(R.id.b_play);
+        bPlay = findViewById(R.id.b_play_pause);
+        bStop = findViewById(R.id.btn_stop);
         navView = findViewById(R.id.bottom_navigation);
     }
 
@@ -287,21 +290,23 @@ public class MainActivity extends AppCompatActivity implements
                     if (!checkPermissions()) {
                         requestPermissions();
                     } else if(mBound){
-                        if (!Utils.getUpdateState(getApplicationContext())){
-                            stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
+                        if (Utils.getPausedState(getApplicationContext()))
+                            mService.resumeLocationUpdate();
+                        else if (!Utils.getUpdateState(getApplicationContext())){
                             toShow = false;
                             distance = "0";
                             time = 0;
                             avg = BigDecimal.valueOf(0);
                             elevationFragment.resetPoints();
-                            mService.requestLocationUpdates();
+                            stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
+                            mService.startLocationUpdate();
                         }
                     }
                 }
                 else if(mBound){
                     setButtonImage(true);
-                    if (Utils.getUpdateState(getApplicationContext())){
-                        mService.removeLocationUpdates();
+                    if (!Utils.getPausedState(getApplicationContext()) && Utils.getUpdateState(getApplicationContext())){
+                        mService.pauseLocationUpdate();
                     }
                 }
             }
@@ -311,6 +316,13 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 tracing.setValue(!tracing.getValue());
+            }
+        });
+        bStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mBound && Utils.getUpdateState(getApplicationContext()))
+                    mService.stopLocationUpdate(false);
             }
         });
     }
@@ -413,7 +425,7 @@ public class MainActivity extends AppCompatActivity implements
         if (state)
             bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
         else
-            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_stop, getTheme()));
+            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
     }
 
     public void setMapTracking(boolean mapTracking){

@@ -25,4 +25,5 @@
     <string name="auth_pass">Contraseña</string>
     <string name="auth_reg">Registrar</string>
     <string name="auth_acc">Acceder</string>
+    <string name="detener_main">Detener</string>
 </resources>

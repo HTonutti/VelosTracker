@@ -43,14 +43,14 @@
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/b_play"
+        android:id="@+id/b_play_pause"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/colorAccentBackground"
         app:layout_anchor="@id/bottomAppBar"
-        app:layout_anchorGravity="center"
+        app:layout_anchorGravity="top|center"
         app:srcCompat="@drawable/ic_play" />
 
     <com.google.android.material.bottomappbar.BottomAppBar
@@ -77,5 +77,24 @@
             app:labelVisibilityMode="selected"
             app:menu="@menu/navigation_bar_menu" />
     </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_anchor="@+id/linearLayout"
+        app:layout_anchorGravity="start|bottom">
+
+        <Button
+            android:id="@+id/btn_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccentBackground"
+            android:text="@string/detener_main" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -36,7 +36,6 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -57,7 +56,13 @@ public class LocationUpdatesService extends Service {
 
     static final String EXTRA_DATAPACK = PACKAGE_NAME + ".datapack";
 
-    private static final String EXTRA_STARTED_FROM_NOTIFICATION = PACKAGE_NAME + ".started_from_notification";
+    private static final String EXTRA_STARTED_FROM_NOTIFICATION = ".started_from_notification";
+
+    private static final String NOTIFICATION_STOP = PACKAGE_NAME + ".notification_stop";
+
+    private static final String NOTIFICATION_PAUSE = PACKAGE_NAME + ".notification_pause";
+
+    private static final String NOTIFICATION_RESUME = PACKAGE_NAME + ".notification_resume";
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -162,18 +167,72 @@ public class LocationUpdatesService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Servicio comenzado ID: " + startId);
-        startedFromNotification = intent.getBooleanExtra(EXTRA_STARTED_FROM_NOTIFICATION,false);
-        // We got here because the user decided to remove location updates from the notification.
+        if (intent != null){
+            String action = intent.getAction();
+            if (action != null && !action.isEmpty()){
+                switch (action) {
+                    case NOTIFICATION_STOP:
+                        stopLocationUpdate(intent.getBooleanExtra(EXTRA_STARTED_FROM_NOTIFICATION, false));
+                        break;
+                    case NOTIFICATION_PAUSE:
+                        pauseLocationUpdate();
+                        break;
+                    case NOTIFICATION_RESUME:
+                        resumeLocationUpdate();
+                        break;
+                }
+            }
+        }
+
+        // Tells the system to not try to recreate the service after it has been killed.
+        return START_NOT_STICKY;
+    }
+
+
+    public void pauseLocationUpdate(){
+        Utils.setPausedState(this, true);
+        if (timer != null)
+            timer.cancel();
+        accumulatedTime = currentTime;
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+    }
+
+    public void stopLocationUpdate(boolean startedFromNotification){
+        Utils.setPausedState(this, false);
+        if (timer != null)
+            timer.cancel();
         if (startedFromNotification) {
             Intent intentAct = new Intent(this, MainActivity.class);
             startActivity(intentAct);
             Intent intentCloseNoticationPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
             getApplicationContext().sendBroadcast(intentCloseNoticationPanel);
-            removeLocationUpdates();
         }
+        removeLocationUpdates();
+        writeOnDatabase();
+    }
 
-        // Tells the system to not try to recreate the service after it has been killed.
-        return START_NOT_STICKY;
+    public void resumeLocationUpdate(){
+        Utils.setPausedState(this, false);
+        startTime = System.currentTimeMillis();
+        roundedDistance = 0D;
+        currentTime = accumulatedTime;
+        requestLocationUpdates();
+    }
+
+    public void startLocationUpdate(){
+        Utils.setPausedState(this, false);
+        firstTime = true;
+        startTime = System.currentTimeMillis();
+        accumulatedTime = 0L;
+        currentTime = 0L;
+        realDistance = BigDecimal.valueOf(0);
+        roundedDistance = 0D;
+        polyNodeArray = new ArrayList<>();
+        DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        startDate = DFormat.format(new Date());
+        MINIMUN_DISTANCE_IN_METERS = Utils.getMtsRefresh();
+        requestLocationUpdates();
+        startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
     }
 
     @Override
@@ -228,21 +287,8 @@ public class LocationUpdatesService extends Service {
      * {@link SecurityException}.
      */
     public void requestLocationUpdates() {
-        if (!Utils.getPausedState(this)) {
-            startTime = System.currentTimeMillis();
-            currentTime = 0L;
-            realDistance = BigDecimal.valueOf(0);
-            roundedDistance = 0D;
-            polyNodeArray = new ArrayList<>();
-            DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-            startDate = DFormat.format(new Date());
-            MINIMUN_DISTANCE_IN_METERS = Utils.getMtsRefresh();
-
-            startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
-        }
-        else
-            Utils.setPausedState(this, true);
-        firstTime = true;
+        if (timer != null)
+            timer.cancel();
         timer = new Timer();
         timer.scheduleAtFixedRate(new timeUpdateTask(), 0, 1000);
 
@@ -257,12 +303,6 @@ public class LocationUpdatesService extends Service {
         }
     }
 
-    private void pauseLocationUpdate(){
-        accumulatedTime = accumulatedTime + currentTime;
-        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
-        Utils.setPausedState(this, true);
-    }
-
     /**
      * Removes location updates. Note that in this sample we merely log the
      * {@link SecurityException}.
@@ -272,8 +312,6 @@ public class LocationUpdatesService extends Service {
         try {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             Utils.setUpdateState(this, false);
-            writeOnDatabase();
-            timer.cancel();
         } catch (SecurityException unlikely) {
             Utils.setUpdateState(this, true);
             Log.e(TAG, "Permiso de ubicación perdido. No se pudieron solicitar actualizaciones " + unlikely);
@@ -296,25 +334,32 @@ public class LocationUpdatesService extends Service {
 
         CharSequence text = Utils.getNotificationText(BigDecimal.valueOf(roundedDistance), currentTime);
 
-        // Extra to help us figure out if we arrived in onStartCommand via the notification or not.
-        intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true);
-
         // The PendingIntent that leads to a call to onStartCommand() in this service.
-        PendingIntent servicePendingIntent = PendingIntent.getService(this, 0, intent,
+        PendingIntent stopIntent = PendingIntent.getService(this, 0,
+                intent.setAction(NOTIFICATION_STOP).putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true),
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        // The PendingIntent to launch activity.
+        PendingIntent pauseIntent = PendingIntent.getService(this, 0,
+                intent.setAction(NOTIFICATION_PAUSE),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        PendingIntent resumeIntent = PendingIntent.getService(this, 0,
+                intent.setAction(NOTIFICATION_RESUME),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
         PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
-
-//        PendingIntent pauseIntent = PendingIntent.getForegroundService();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
 //                .addAction(R.drawable.ic_play, "Ir a la aplicación",
 //                        activityPendingIntent)
                 .setContentIntent(activityPendingIntent)
-                .addAction(R.drawable.ic_stop, "Detener seguimiento",
-                        servicePendingIntent)
+                .addAction(R.drawable.ic_play, "Reanudar",
+                        resumeIntent)
+                .addAction(R.drawable.ic_pause, "Pausar",
+                        pauseIntent)
+                .addAction(R.drawable.ic_stop, "Detener",
+                        stopIntent)
                 .setContentText(text)
                 .setContentTitle(Utils.getNotificationTitle(this))
                 .setOnlyAlertOnce(true)

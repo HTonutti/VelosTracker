@@ -49,6 +49,8 @@ public class AuthenticationActivity extends AppCompatActivity {
         btnAccess = findViewById(R.id.btn_auth_acc);
         mail = findViewById(R.id.txt_mail);
         pass = findViewById(R.id.txt_pass);
+        Utils.setPausedState(this, false);
+        Utils.setUpdateState(this, false);
 
         setListeners();
     }
