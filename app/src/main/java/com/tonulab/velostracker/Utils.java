@@ -33,6 +33,7 @@ class Utils {
     static final String PAUSED_UPDATE = "paused_update";
     static final String MODE = "mode";
     static final String TRACKING = "tracking";
+    static final String LEISURELY_TIME = "leisurely_time";
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
     static private String selectedMode = CICLISMO.toString();
@@ -74,6 +75,18 @@ class Utils {
                 .apply();
     }
 
+    static boolean getLeisurelyTime(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(LEISURELY_TIME, false);
+    }
+
+    static void setLeisurelyTime(Context context, boolean tracking) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(LEISURELY_TIME, tracking)
+                .apply();
+    }
+
     static void setMode(Context context, String mode){
         selectedMode = mode;
         PreferenceManager.getDefaultSharedPreferences(context)
@@ -89,7 +102,7 @@ class Utils {
 
     static Float getMtsRefresh(){
         if (selectedMode.equals(MODES.PEDESTRISMO.toString()))
-            return 2.0f;
+            return 5.0f;
         if (selectedMode.equals(AUTOMOVILISMO.toString()))
             return 30.0f;
         return 10.0f;

@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
-import com.jjoe64.graphview.LabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -22,6 +21,7 @@ public class ElevationFragment extends Fragment {
     GraphView graphView;
     private MainActivity mainActivity;
     private LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
+    private static final double DISTANCE_TO_CALCULATE_IN_KM = 0.1;
 
     public void setMainActivity(MainActivity mainActivity){this.mainActivity = mainActivity;}
 
@@ -51,8 +51,22 @@ public class ElevationFragment extends Fragment {
 
     public void setPoints(ArrayList<PolyNode> polyNodes){
         resetPoints();
+        Double acuDist = 0D;
+        Double acuAltitude = 0D;
+        Integer nodesCount = 0;
         for (int i = 0; i < polyNodes.size(); i++) {
-            series.appendData(new DataPoint(polyNodes.get(i).getDistance(), polyNodes.get(i).getAltitude()), true, Integer.MAX_VALUE);
+            Double distAnt = 0D;
+            if (i > 0)
+                distAnt = polyNodes.get(i - 1).getDistance();
+            acuDist += polyNodes.get(i).getDistance() - distAnt;
+            acuAltitude += polyNodes.get(i).getAltitude();
+            nodesCount += 1;
+            if (acuDist >= DISTANCE_TO_CALCULATE_IN_KM) {
+                series.appendData(new DataPoint(polyNodes.get(i).getDistance(), acuAltitude / nodesCount), true, Integer.MAX_VALUE);
+                acuDist = 0D;
+                acuAltitude = 0D;
+                nodesCount = 0;
+            }
         }
     }
 

@@ -31,6 +31,7 @@ public class ConfigurationFragment extends Fragment implements
     private Context context;
 
     Switch swt_follow;
+    Switch swt_pause;
     AppCompatImageButton btn_mode;
     AppCompatImageButton btn_logout;
 
@@ -40,6 +41,7 @@ public class ConfigurationFragment extends Fragment implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.configuration, container, false);
         swt_follow = rootView.findViewById(R.id.switch_follow);
+        swt_pause = rootView.findViewById(R.id.switch_pause);
         btn_mode = rootView.findViewById(R.id.btn_mode);
         btn_logout = rootView.findViewById(R.id.btn_logout);
 
@@ -49,6 +51,14 @@ public class ConfigurationFragment extends Fragment implements
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 Utils.setTracking(context, isChecked);
+            }
+        });
+
+        swt_pause.setChecked(Utils.getLeisurelyTime(getContext()));
+        swt_pause.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Utils.setLeisurelyTime(context, isChecked);
             }
         });
 

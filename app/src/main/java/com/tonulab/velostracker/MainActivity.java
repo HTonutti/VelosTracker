@@ -59,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements
             mService = binder.getService();
             mBound = true;
             if (!toShow)
-                mService.requestSendUpdate();
-            if (Utils.getUpdateState(getApplicationContext())) {
+                mService.requestDataPack();
+            if ((Utils.getUpdateState(getApplicationContext()) && !Utils.getPausedState(getApplicationContext()))) {
                 tracing.setValue(true);
             } else {
                 tracing.setValue(false);
@@ -232,9 +232,11 @@ public class MainActivity extends AppCompatActivity implements
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 int id = menuItem.getItemId();
                 menuItem.setChecked(true);
+                bStop.setVisibility(View.INVISIBLE);
                 switch (id){
                     case R.id.menu_map: {
                         if (!(fm.findFragmentById(R.id.fragment_container) instanceof MapsFragment)) {
+                            bStop.setVisibility(View.VISIBLE);
                             stackMenu.removeElement(id);
                             stackMenu.push(id);
                             fm.beginTransaction()
@@ -292,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements
                     } else if(mBound){
                         if (Utils.getPausedState(getApplicationContext()))
                             mService.resumeLocationUpdate();
-                        else if (!Utils.getUpdateState(getApplicationContext())){
+                        else if (!Utils.getUpdateState(getApplicationContext())) {
                             toShow = false;
                             distance = "0";
                             time = 0;
@@ -510,13 +512,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void shutdown(boolean logout){
-//        mService.reset();
-//        mapTracking = false;
-//        toShow = false;
-//        userId = "";
-//        provider = "";
-//        stackMenu = new Stack<>();
-//        fm = getSupportFragmentManager();
         if (logout){
             FirebaseAuth.getInstance().signOut();
             PreferenceManager.getDefaultSharedPreferences(this)

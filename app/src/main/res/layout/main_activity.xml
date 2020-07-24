@@ -89,7 +89,6 @@
             android:id="@+id/btn_stop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@color/colorAccentBackground"
             android:text="@string/detener_main" />
 
         <Space

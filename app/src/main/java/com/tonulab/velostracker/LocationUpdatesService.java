@@ -49,35 +49,28 @@ public class LocationUpdatesService extends Service {
 
     // Nombre del canal para las notificaciones
     private static final String CHANNEL_ID = "channel_01";
-
     static final String ACTION_BROADCAST = PACKAGE_NAME + ".broadcast";
-
     static final String EXTRA_LOCATION = PACKAGE_NAME + ".location";
-
     static final String EXTRA_DATAPACK = PACKAGE_NAME + ".datapack";
-
     private static final String EXTRA_STARTED_FROM_NOTIFICATION = ".started_from_notification";
-
     private static final String NOTIFICATION_STOP = PACKAGE_NAME + ".notification_stop";
-
     private static final String NOTIFICATION_PAUSE = PACKAGE_NAME + ".notification_pause";
-
     private static final String NOTIFICATION_RESUME = PACKAGE_NAME + ".notification_resume";
 
     private final IBinder mBinder = new LocalBinder();
 
-    // Minima distancia en metros recorridos para que actualice la polilinea y cuente como metro recorrido
-    private float MINIMUN_DISTANCE_IN_METERS;
 
     // Intervalo en el cual se realizan actualizaciones
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
-
     // Intervalo mas rapido de actualizacion, estas nuncas seran mas rapidas que este valor
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
-
     // Minimo desplazamineto para que se realice una actualizacion de ubicacion
     private static final float MINIMUN_DISPLACEMENT_IN_METERS = 1.0f;
+    // Minima distancia en metros recorridos para que actualice la polilinea y cuente como metro recorrido
+    private static float MINIMUN_DISTANCE_TO_REFRESH;
+    private static final float MINIMUN_DISTANCE_TO_PAUSE_TIME = 3.0f;
+    private static final long TIME_TO_PAUSE_IN_MILLISECONDS = 5000;
 
     // Idetificador para la notificacion del servicio cuando esta en primer plano
     private static final int NOTIFICATION_ID = 12345678;
@@ -87,48 +80,32 @@ public class LocationUpdatesService extends Service {
      ha desvinculado como parte de un cambio de orientación. Creamos una notificación
      de servicio en primer plano solo si se lleva a cabo la primera.
      */
-    private boolean mChangingConfiguration = false;
+    private static boolean mChangingConfiguration = false;
 
-    private NotificationManager mNotificationManager;
-
-    // Contiene los parametros usados en {@link com.google.android.gms.location.FusedLocationProviderClient}.
-    private LocationRequest mLocationRequest;
-
-    // Da acceso al Fused Location Provider API.
-    private FusedLocationProviderClient mFusedLocationClient;
-
-    // Callback por los cambios de ubicacion
-    private LocationCallback mLocationCallback;
-
-    private Handler mServiceHandler;
+    private static NotificationManager mNotificationManager;
+    private static LocationRequest mLocationRequest;
+    private static FusedLocationProviderClient mFusedLocationClient;
+    private static LocationCallback mLocationCallback;
+    private static Handler mServiceHandler;
 
     private FirebaseManager firebaseManager = null;
 
-    // Ubicacion actual
-    private Location mLocation;
-
-    private Location antLocation;
-
-    private ArrayList<PolyNode> polyNodeArray;
-
-    private BigDecimal realDistance = BigDecimal.valueOf(0);
-
-    private Double roundedDistance = 0D;
-
-    private String startDate;
-
+    private static Location mLocation;
+    private static Location antLocation;
+    private static ArrayList<PolyNode> polyNodeArray;
+    private static BigDecimal realDistance = BigDecimal.valueOf(0);
+    private static Double roundedDistance = 0D;
+    private static String startDate;
     private static Timer timer;
+    private static Long startTime;
+    private static Long currentTime = 0L;
+    private static Long accumulatedTime = 0L;
+    private static boolean firstTime = false;
+    private static Long startLeisurelyTime;
+    private static Location locationPaused = null;
+    private static boolean leisurelyTime = false;
+    private static boolean beganLeisurelyTime = false;
 
-    private Long startTime;
-
-    private Long currentTime = 0L;
-
-    private Long accumulatedTime = 0L;
-
-    private boolean startedFromNotification;
-
-    private boolean firstTime = false;
-    // Constructor
     public LocationUpdatesService() {}
 
     @Override
@@ -230,7 +207,7 @@ public class LocationUpdatesService extends Service {
         polyNodeArray = new ArrayList<>();
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         startDate = DFormat.format(new Date());
-        MINIMUN_DISTANCE_IN_METERS = Utils.getMtsRefresh();
+        MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
         requestLocationUpdates();
         startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
     }
@@ -318,7 +295,7 @@ public class LocationUpdatesService extends Service {
         }
     }
 
-    public void requestSendUpdate(){
+    public void requestDataPack(){
         Intent intent = new Intent(ACTION_BROADCAST);
         intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -450,6 +427,24 @@ public class LocationUpdatesService extends Service {
         return false;
     }
 
+    private void pauseTime(){
+        Log.i(TAG, "Tiempo pausado");
+        accumulatedTime = currentTime;
+        leisurelyTime = true;
+        if (timer != null)
+            timer.cancel();
+    }
+
+    private void resumeTime(){
+        Log.i(TAG, "Tiempo resumido");
+        leisurelyTime = false;
+        startTime = System.currentTimeMillis();
+        roundedDistance = 0D;
+        currentTime = accumulatedTime;
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new timeUpdateTask(), 0, 1000);
+    }
+
     private void refreshDistance(Location loc){
         float[] distanceRes = new float[3];
         distanceRes[0] = 0;
@@ -461,7 +456,8 @@ public class LocationUpdatesService extends Service {
         }
         Location auxLocation = mLocation;
         mLocation = loc;
-        if (distanceRes[0] > MINIMUN_DISTANCE_IN_METERS) {
+        manageLeisurelyTime(distanceRes[0]);
+        if (distanceRes[0] > MINIMUN_DISTANCE_TO_REFRESH && !leisurelyTime) {
             realDistance = BigDecimal.valueOf(distanceRes[0]).divide(BigDecimal.valueOf(1000)).add(realDistance);
             roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
             Log.i(TAG, "Distancia actualizada: " + realDistance);
@@ -470,19 +466,26 @@ public class LocationUpdatesService extends Service {
         }
     }
 
-    public void reset(){
-        startTime = 0L;
-        accumulatedTime = 0L;
-        currentTime = 0L;
-        realDistance = BigDecimal.valueOf(0);
-        roundedDistance = 0D;
-        polyNodeArray = new ArrayList<>();
-        mLocation = null;
-        antLocation = null;
-        realDistance = BigDecimal.valueOf(0);
-        roundedDistance = 0D;
-        startDate = null;
-        firstTime = false;
+    private void manageLeisurelyTime(Float distance){
+        if (Utils.getLeisurelyTime(this)){
+            if (distance == null)
+                distance = MINIMUN_DISTANCE_TO_PAUSE_TIME;
+
+            if (distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation){
+                if (!beganLeisurelyTime){
+                    startLeisurelyTime = System.currentTimeMillis();
+                    beganLeisurelyTime = true;
+                }
+                else if (System.currentTimeMillis() - startLeisurelyTime > TIME_TO_PAUSE_IN_MILLISECONDS) {
+                    pauseTime();
+                }
+            } else{
+                locationPaused = mLocation;
+                beganLeisurelyTime = false;
+                if (leisurelyTime)
+                    resumeTime();
+            }
+        }
     }
 
     private void writeOnDatabase() {
@@ -515,6 +518,7 @@ public class LocationUpdatesService extends Service {
             if (serviceIsRunningInForeground(LocationUpdatesService.this)) {
                 mNotificationManager.notify(NOTIFICATION_ID, getNotification());
             }
+            manageLeisurelyTime(null);
         }
     }
 }
