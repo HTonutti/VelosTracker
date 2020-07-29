@@ -28,6 +28,7 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -36,6 +37,9 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -70,7 +74,7 @@ public class LocationUpdatesService extends Service {
     // Minima distancia en metros recorridos para que actualice la polilinea y cuente como metro recorrido
     private static float MINIMUN_DISTANCE_TO_REFRESH;
     private static final float MINIMUN_DISTANCE_TO_PAUSE_TIME = 3.0f;
-    private static final long TIME_TO_PAUSE_IN_MILLISECONDS = 5000;
+    private static final long TIME_TO_PAUSE_IN_MILLISECONDS = 10000;
 
     // Idetificador para la notificacion del servicio cuando esta en primer plano
     private static final int NOTIFICATION_ID = 12345678;
@@ -84,7 +88,7 @@ public class LocationUpdatesService extends Service {
 
     private static NotificationManager mNotificationManager;
     private static LocationRequest mLocationRequest;
-    private static FusedLocationProviderClient mFusedLocationClient;
+    private FusedLocationProviderClient mFusedLocationClient;
     private static LocationCallback mLocationCallback;
     private static Handler mServiceHandler;
 
@@ -92,19 +96,25 @@ public class LocationUpdatesService extends Service {
 
     private static Location mLocation;
     private static Location antLocation;
+
     private static ArrayList<PolyNode> polyNodeArray;
     private static BigDecimal realDistance = BigDecimal.valueOf(0);
     private static Double roundedDistance = 0D;
     private static String startDate;
+
     private static Timer timer;
     private static Long startTime;
     private static Long currentTime = 0L;
     private static Long accumulatedTime = 0L;
+
     private static boolean firstTime = false;
+
     private static Long startLeisurelyTime;
     private static Location locationPaused = null;
     private static boolean leisurelyTime = false;
     private static boolean beganLeisurelyTime = false;
+    private static Queue<Location> locationsForLeisurely;
+    private static final int numberOfLocationToSave = 3;
 
     public LocationUpdatesService() {}
 
@@ -168,6 +178,8 @@ public class LocationUpdatesService extends Service {
 
     public void pauseLocationUpdate(){
         Utils.setPausedState(this, true);
+        leisurelyTime = false;
+        beganLeisurelyTime = false;
         if (timer != null)
             timer.cancel();
         accumulatedTime = currentTime;
@@ -190,6 +202,7 @@ public class LocationUpdatesService extends Service {
 
     public void resumeLocationUpdate(){
         Utils.setPausedState(this, false);
+        leisurelyTime = false;
         startTime = System.currentTimeMillis();
         roundedDistance = 0D;
         currentTime = accumulatedTime;
@@ -207,6 +220,7 @@ public class LocationUpdatesService extends Service {
         polyNodeArray = new ArrayList<>();
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         startDate = DFormat.format(new Date());
+        locationsForLeisurely = new LinkedList<>();
         MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
         requestLocationUpdates();
         startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
@@ -328,8 +342,6 @@ public class LocationUpdatesService extends Service {
                 new Intent(this, MainActivity.class), 0);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-//                .addAction(R.drawable.ic_play, "Ir a la aplicación",
-//                        activityPendingIntent)
                 .setContentIntent(activityPendingIntent)
                 .addAction(R.drawable.ic_play, "Reanudar",
                         resumeIntent)
@@ -372,6 +384,13 @@ public class LocationUpdatesService extends Service {
 
         // Notify anyone listening for broadcasts about the new location.
         Intent intent = new Intent(ACTION_BROADCAST);
+
+        if (locationsForLeisurely.size() >= numberOfLocationToSave) {
+            locationsForLeisurely.poll();
+        }
+        locationsForLeisurely.add(location);
+        manageLeisurelyTime();
+
         refreshDistance(location);
         if (firstTime){
             polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), roundedDistance));
@@ -446,19 +465,17 @@ public class LocationUpdatesService extends Service {
     }
 
     private void refreshDistance(Location loc){
-        float[] distanceRes = new float[3];
-        distanceRes[0] = 0;
+        Float distanceRes = 0F;
         if (antLocation != null){
-            Location.distanceBetween(mLocation.getLatitude(), mLocation.getLongitude(), antLocation.getLatitude(), antLocation.getLongitude(), distanceRes);
+            distanceRes = distanceBetweenLocations(mLocation, antLocation);
         }
         else{
             antLocation = mLocation;
         }
         Location auxLocation = mLocation;
         mLocation = loc;
-        manageLeisurelyTime(distanceRes[0]);
-        if (distanceRes[0] > MINIMUN_DISTANCE_TO_REFRESH && !leisurelyTime) {
-            realDistance = BigDecimal.valueOf(distanceRes[0]).divide(BigDecimal.valueOf(1000)).add(realDistance);
+        if (distanceRes > MINIMUN_DISTANCE_TO_REFRESH && !leisurelyTime) {
+            realDistance = BigDecimal.valueOf(distanceRes).divide(BigDecimal.valueOf(1000),16, RoundingMode.HALF_EVEN).add(realDistance);
             roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
             Log.i(TAG, "Distancia actualizada: " + realDistance);
             polyNodeArray.add(new PolyNode(mLocation.getLatitude(), mLocation.getLongitude(), mLocation.getAltitude(), roundedDistance));
@@ -466,17 +483,22 @@ public class LocationUpdatesService extends Service {
         }
     }
 
-    private void manageLeisurelyTime(Float distance){
-        if (Utils.getLeisurelyTime(this)){
-            if (distance == null)
-                distance = MINIMUN_DISTANCE_TO_PAUSE_TIME;
+    private Float distanceBetweenLocations(Location loc1, Location loc2){
+        float[] distanceRes = new float[3];
+        distanceRes[0] = 0;
+        Location.distanceBetween(loc1.getLatitude(), loc1.getLongitude(), loc2.getLatitude(), loc2.getLongitude(), distanceRes);
+        return distanceRes[0];
+    }
 
+    private void manageLeisurelyTime(){
+        if (Utils.getLeisurelyTime(this) && !Utils.getPausedState(this)){
+            Float distance = calcCloseness();
             if (distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation){
                 if (!beganLeisurelyTime){
                     startLeisurelyTime = System.currentTimeMillis();
                     beganLeisurelyTime = true;
                 }
-                else if (System.currentTimeMillis() - startLeisurelyTime > TIME_TO_PAUSE_IN_MILLISECONDS) {
+                else if (System.currentTimeMillis() - startLeisurelyTime > TIME_TO_PAUSE_IN_MILLISECONDS && !leisurelyTime) {
                     pauseTime();
                 }
             } else{
@@ -486,6 +508,29 @@ public class LocationUpdatesService extends Service {
                     resumeTime();
             }
         }
+    }
+
+    private Float calcCloseness() {
+        double accumLat = 0D;
+        double accumLon = 0D;
+        Iterator<Location> it = locationsForLeisurely.iterator();
+        while (it.hasNext()) {
+            Location locAux = it.next();
+            accumLat += locAux.getLatitude();
+            accumLon += locAux.getLongitude();
+        }
+        float centerLat = (float) (accumLat / locationsForLeisurely.size());
+        float centerLon = (float) (accumLon / locationsForLeisurely.size());
+        Location centerLoc = new Location("");
+        centerLoc.setLatitude(centerLat);
+        centerLoc.setLongitude(centerLon);
+
+        Float accumDistance = 0F;
+        it = locationsForLeisurely.iterator();
+        while (it.hasNext()) {
+            accumDistance += distanceBetweenLocations(centerLoc, it.next());
+        }
+        return accumDistance / (float) locationsForLeisurely.size();
     }
 
     private void writeOnDatabase() {
@@ -508,7 +553,11 @@ public class LocationUpdatesService extends Service {
     {
         public void run()
         {
-            currentTime = accumulatedTime + (System.currentTimeMillis() - startTime) / 1000;
+            manageLeisurelyTime();
+            if (leisurelyTime)
+                currentTime -= TIME_TO_PAUSE_IN_MILLISECONDS / 1000;
+            else
+                currentTime = accumulatedTime + (System.currentTimeMillis() - startTime) / 1000;
             // Notify anyone listening for broadcasts about the new location.
             Intent intent = new Intent(ACTION_BROADCAST);
             intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
@@ -518,7 +567,6 @@ public class LocationUpdatesService extends Service {
             if (serviceIsRunningInForeground(LocationUpdatesService.this)) {
                 mNotificationManager.notify(NOTIFICATION_ID, getNotification());
             }
-            manageLeisurelyTime(null);
         }
     }
 }
