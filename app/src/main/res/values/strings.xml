@@ -17,7 +17,7 @@
     <string name="conf_follow_title">Seguimiento</string>
     <string name="conf_follow_description">El mapa seguirá continuamente la ubicación actual según esta cambie</string>
     <string name="conf_pause_title">Pausa automática</string>
-    <string name="conf_pause_description">Detiene y reanuda automáticamente el cronómetro. La pausa se produce si la ubicación no varia durante 5 segundos</string>
+    <string name="conf_pause_description">Detiene y reanuda automáticamente el cronómetro. La pausa se produce si la ubicación no varia durante 10 segundos</string>
     <string name="conf_mode_title">Modo</string>
     <string name="conf_mode_description">Según la actividad que desarrolle se ajusta la velocidad de actualización</string>
     <string name="auth_btn_google">GOOGLE</string>

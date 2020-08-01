@@ -5,11 +5,9 @@
 
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graph_elevation"
-        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_marginBottom="@dimen/margin_bottom_layout"
+        android:layout_height="match_parent"
         android:layout_marginTop="@dimen/margin_top_layout"
-        android:layout_marginLeft="@dimen/margin_side_layout"
-        android:layout_marginRight="@dimen/margin_side_layout"/>
-}
+        android:layout_marginBottom="@dimen/margin_bottom_layout" />
+
 </LinearLayout>

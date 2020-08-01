@@ -114,7 +114,7 @@ public class LocationUpdatesService extends Service {
     private static boolean leisurelyTime = false;
     private static boolean beganLeisurelyTime = false;
     private static Queue<Location> locationsForLeisurely;
-    private static final int numberOfLocationToSave = 3;
+    private static final int numberOfLocationToSave = 5;
 
     public LocationUpdatesService() {}
 
@@ -513,24 +513,25 @@ public class LocationUpdatesService extends Service {
     private Float calcCloseness() {
         double accumLat = 0D;
         double accumLon = 0D;
-        Iterator<Location> it = locationsForLeisurely.iterator();
+        Queue<Location> auxLocation = new LinkedList<>(locationsForLeisurely);
+        Iterator<Location> it = auxLocation.iterator();
         while (it.hasNext()) {
             Location locAux = it.next();
             accumLat += locAux.getLatitude();
             accumLon += locAux.getLongitude();
         }
-        float centerLat = (float) (accumLat / locationsForLeisurely.size());
-        float centerLon = (float) (accumLon / locationsForLeisurely.size());
+        float centerLat = (float) (accumLat / auxLocation.size());
+        float centerLon = (float) (accumLon / auxLocation.size());
         Location centerLoc = new Location("");
         centerLoc.setLatitude(centerLat);
         centerLoc.setLongitude(centerLon);
 
         Float accumDistance = 0F;
-        it = locationsForLeisurely.iterator();
+        it = auxLocation.iterator();
         while (it.hasNext()) {
             accumDistance += distanceBetweenLocations(centerLoc, it.next());
         }
-        return accumDistance / (float) locationsForLeisurely.size();
+        return accumDistance / (float) auxLocation.size();
     }
 
     private void writeOnDatabase() {

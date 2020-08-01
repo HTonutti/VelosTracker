@@ -38,8 +38,8 @@ public class ElevationFragment extends Fragment {
         graphView.onDataChanged(true,true);
         graphView.addSeries(series);
         graphView.setBackgroundColor(Color.TRANSPARENT);
-        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Distancia [KM]");
-        graphView.getGridLabelRenderer().setVerticalAxisTitle("Altitud [MTS]");
+        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Distancia en kilómetros");
+        graphView.getGridLabelRenderer().setVerticalLabelsVisible(false);
         graphView.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
 
         return rootView;
