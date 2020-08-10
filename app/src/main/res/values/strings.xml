@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">VelosTracker</string>
+    <string name="app_name">Velos Tracker</string>
     <string name="title_activity_maps">Map</string>
 
     <string name="menu1">Mapa</string>
@@ -28,4 +28,10 @@
     <string name="auth_reg">Registrar</string>
     <string name="auth_acc">Acceder</string>
     <string name="detener_main">Detener</string>
+    <string name="mts">KMS</string>
+    <string name="km_h">KM/H</string>
+    <string name="location_settings_yes">Ir a las opciones</string>
+    <string name="gps_not_found_title">El gps no se encuentra activado</string>
+    <string name="gps_not_found_message">No se puede continuar sin tener las actualizaciones de ubicación</string>
+    <string name="center_text">TIEMPO</string>
 </resources>

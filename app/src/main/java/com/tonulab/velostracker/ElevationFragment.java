@@ -19,11 +19,8 @@ import java.util.ArrayList;
 public class ElevationFragment extends Fragment {
 
     GraphView graphView;
-    private MainActivity mainActivity;
     private LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
     private static final double DISTANCE_TO_CALCULATE_IN_KM = 0.1;
-
-    public void setMainActivity(MainActivity mainActivity){this.mainActivity = mainActivity;}
 
     public ElevationFragment(){
         series.setColor(Color.BLACK);
@@ -51,11 +48,11 @@ public class ElevationFragment extends Fragment {
 
     public void setPoints(ArrayList<PolyNode> polyNodes){
         resetPoints();
-        Double acuDist = 0D;
-        Double acuAltitude = 0D;
-        Integer nodesCount = 0;
+        double acuDist = 0;
+        double acuAltitude = 0;
+        int nodesCount = 0;
         for (int i = 0; i < polyNodes.size(); i++) {
-            Double distAnt = 0D;
+            double distAnt = 0;
             if (i > 0)
                 distAnt = polyNodes.get(i - 1).getDistance();
             acuDist += polyNodes.get(i).getDistance() - distAnt;
@@ -63,8 +60,8 @@ public class ElevationFragment extends Fragment {
             nodesCount += 1;
             if (acuDist >= DISTANCE_TO_CALCULATE_IN_KM) {
                 series.appendData(new DataPoint(polyNodes.get(i).getDistance(), acuAltitude / nodesCount), true, Integer.MAX_VALUE);
-                acuDist = 0D;
-                acuAltitude = 0D;
+                acuDist = 0;
+                acuAltitude = 0;
                 nodesCount = 0;
             }
         }

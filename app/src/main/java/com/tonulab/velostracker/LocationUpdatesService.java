@@ -9,6 +9,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Binder;
@@ -17,6 +18,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -44,7 +46,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class LocationUpdatesService extends Service {
+public class LocationUpdatesService extends Service implements
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String PACKAGE_NAME =
             "package com.tonulab.velostracker";
@@ -103,7 +106,7 @@ public class LocationUpdatesService extends Service {
     private static String startDate;
 
     private static Timer timer;
-    private static Long startTime;
+    private static Long startTime = 0L;
     private static Long currentTime = 0L;
     private static Long accumulatedTime = 0L;
 
@@ -113,7 +116,7 @@ public class LocationUpdatesService extends Service {
     private static Location locationPaused = null;
     private static boolean leisurelyTime = false;
     private static boolean beganLeisurelyTime = false;
-    private static Queue<Location> locationsForLeisurely;
+    private static Queue<Location> locationsForLeisurely = new LinkedList<>();
     private static final int numberOfLocationToSave = 5;
 
     public LocationUpdatesService() {}
@@ -149,6 +152,8 @@ public class LocationUpdatesService extends Service {
             // Set the Notification Channel for the Notification Manager.
             mNotificationManager.createNotificationChannel(mChannel);
         }
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -188,10 +193,13 @@ public class LocationUpdatesService extends Service {
 
     public void stopLocationUpdate(boolean startedFromNotification){
         Utils.setPausedState(this, false);
+        leisurelyTime = false;
+        beganLeisurelyTime = false;
         if (timer != null)
             timer.cancel();
         if (startedFromNotification) {
             Intent intentAct = new Intent(this, MainActivity.class);
+            intentAct.putExtra("showHistoricTab", true);
             startActivity(intentAct);
             Intent intentCloseNoticationPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
             getApplicationContext().sendBroadcast(intentCloseNoticationPanel);
@@ -203,6 +211,7 @@ public class LocationUpdatesService extends Service {
     public void resumeLocationUpdate(){
         Utils.setPausedState(this, false);
         leisurelyTime = false;
+        beganLeisurelyTime = false;
         startTime = System.currentTimeMillis();
         roundedDistance = 0D;
         currentTime = accumulatedTime;
@@ -221,6 +230,8 @@ public class LocationUpdatesService extends Service {
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         startDate = DFormat.format(new Date());
         locationsForLeisurely = new LinkedList<>();
+        leisurelyTime = false;
+        beganLeisurelyTime = false;
         MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
         requestLocationUpdates();
         startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
@@ -271,6 +282,8 @@ public class LocationUpdatesService extends Service {
     @Override
     public void onDestroy() {
         mServiceHandler.removeCallbacksAndMessages(null);
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .unregisterOnSharedPreferenceChangeListener(this);
     }
 
     /**
@@ -417,6 +430,22 @@ public class LocationUpdatesService extends Service {
         mLocationRequest.setSmallestDisplacement(MINIMUN_DISPLACEMENT_IN_METERS);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(Utils.LEISURELY_TIME)) {
+            if (!Utils.getLeisurelyTime(this)){
+                if (leisurelyTime) {
+                    beganLeisurelyTime = false;
+                    resumeTime();
+                }
+            }
+            else{
+                beganLeisurelyTime = false;
+                leisurelyTime = false;
+            }
+        }
+    }
+
     /**
      * Class used for the client Binder.  Since this service runs in the same process as its
      * clients, we don't need to deal with IPC.
@@ -554,11 +583,24 @@ public class LocationUpdatesService extends Service {
     {
         public void run()
         {
+            if (!Utils.checkGPSState(LocationUpdatesService.this)) {
+                pauseLocationUpdate();
+                Utils.setPausedState(LocationUpdatesService.this, true);
+            }
+
             manageLeisurelyTime();
-            if (leisurelyTime)
+            if (leisurelyTime) {
+                accumulatedTime -= TIME_TO_PAUSE_IN_MILLISECONDS / 1000;
                 currentTime -= TIME_TO_PAUSE_IN_MILLISECONDS / 1000;
-            else
-                currentTime = accumulatedTime + (System.currentTimeMillis() - startTime) / 1000;
+            }
+            else {
+                if (startTime != 0)
+                    currentTime = accumulatedTime + (System.currentTimeMillis() - startTime) / 1000;
+                else
+                    currentTime = 0L;
+            }
+
+
             // Notify anyone listening for broadcasts about the new location.
             Intent intent = new Intent(ACTION_BROADCAST);
             intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));

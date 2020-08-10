@@ -1,14 +1,17 @@
 package com.tonulab.velostracker;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -110,8 +113,12 @@ public class MainActivity extends AppCompatActivity implements
         setUserProvider();
         inicialization();
         setListeners();
+        setStopButtonVisibility();
+        Utils.checkGPSState(this);
 
-        if (!checkPermissions()) {
+        if (getIntent().getBooleanExtra("showHistoricTab", false))
+            navView.setSelectedItemId(R.id.menu_historic);
+        else if (!checkPermissions()) {
             requestPermissions();
             navView.setSelectedItemId(R.id.menu_setting);
         }
@@ -144,7 +151,6 @@ public class MainActivity extends AppCompatActivity implements
         configurationFragment.setMainActivity(this);
 
         elevationFragment = new ElevationFragment();
-        elevationFragment.setMainActivity(this);
 
         receiver = new Receiver();
         receiver.setMainActivity(this);
@@ -185,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
         updateTextViews();
+        Utils.checkGPSState(this);
         super.onResume();
     }
 
@@ -232,11 +239,9 @@ public class MainActivity extends AppCompatActivity implements
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 int id = menuItem.getItemId();
                 menuItem.setChecked(true);
-                bStop.setVisibility(View.INVISIBLE);
                 switch (id){
                     case R.id.menu_map: {
                         if (!(fm.findFragmentById(R.id.fragment_container) instanceof MapsFragment)) {
-                            bStop.setVisibility(View.VISIBLE);
                             stackMenu.removeElement(id);
                             stackMenu.push(id);
                             fm.beginTransaction()
@@ -323,8 +328,10 @@ public class MainActivity extends AppCompatActivity implements
         bStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mBound && Utils.getUpdateState(getApplicationContext()))
+                if (mBound && Utils.getUpdateState(getApplicationContext())) {
                     mService.stopLocationUpdate(false);
+                    navView.setSelectedItemId(R.id.menu_historic);
+                }
             }
         });
     }
@@ -421,6 +428,10 @@ public class MainActivity extends AppCompatActivity implements
         else if (key.equals(Utils.TRACKING)){
             setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
         }
+
+        if (key.equals(Utils.UPDATE_STATE) || key.equals(Utils.PAUSED_UPDATE))
+            setStopButtonVisibility();
+
     }
 
     private void setButtonImage(boolean state){
@@ -428,6 +439,13 @@ public class MainActivity extends AppCompatActivity implements
             bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
         else
             bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+    }
+
+    private void setStopButtonVisibility(){
+        if (!Utils.getPausedState(this) && !Utils.getUpdateState(this))
+            bStop.setVisibility(View.INVISIBLE);
+        else
+            bStop.setVisibility(View.VISIBLE);
     }
 
     public void setMapTracking(boolean mapTracking){
@@ -507,8 +525,8 @@ public class MainActivity extends AppCompatActivity implements
 
     private void updateTextViews(){
         txtTime.setText(DateUtils.formatElapsedTime(time));
-        txtDistance.setText(String.format("%s km", distance));
-        txtAvg.setText(String.format("%s km/h", avg));
+        txtDistance.setText(distance);
+        txtAvg.setText(String.valueOf(avg));
     }
 
     public void shutdown(boolean logout){

@@ -5,10 +5,12 @@
     <dimen name="header_leatter">30dp</dimen>
     <dimen name="bottom_navigation_icon_size" tools:override="true">30dp</dimen>
     <dimen name="text_size_main">24sp</dimen>
+    <dimen name="text_size_units">14sp</dimen>
     <dimen name="text_size_auth">20sp</dimen>
     <dimen name="text_size_item_title">20sp</dimen>
     <dimen name="text_size_conf_title">15sp</dimen>
     <dimen name="text_size_conf_description">15sp</dimen>
+    <dimen name="text_size_stop">15sp</dimen>
     <dimen name="margin_top_layout">10dp</dimen>
     <dimen name="margin_side_layout">20dp</dimen>
     <dimen name="margin_bottom_layout">30dp</dimen>

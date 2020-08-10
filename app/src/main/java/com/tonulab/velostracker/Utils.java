@@ -1,8 +1,14 @@
 package com.tonulab.velostracker;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
 import android.preference.PreferenceManager;
+
+import com.google.android.gms.maps.model.CameraPosition;
 
 import java.math.BigDecimal;
 
@@ -56,10 +62,10 @@ class Utils {
                 .getBoolean(PAUSED_UPDATE, false);
     }
 
-    static void setPausedState(Context context, boolean updateState) {
+    static void setPausedState(Context context, boolean pauseState) {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putBoolean(PAUSED_UPDATE, updateState)
+                .putBoolean(PAUSED_UPDATE, pauseState)
                 .apply();
     }
 
@@ -120,16 +126,16 @@ class Utils {
         }
         if (time != null){
             int[] auxTime = splitToComponentTimes(time);
-            String strTiempo = "";
+            StringBuilder strTiempo = new StringBuilder();
             for (int i = 0; i < 3; i++) {
                 if (auxTime[i] < 10){
-                    strTiempo += "0" + auxTime[i];
+                    strTiempo.append("0").append(auxTime[i]);
                 }
                 else{
-                    strTiempo += auxTime[i];
+                    strTiempo.append(auxTime[i]);
                 }
                 if (i != 2){
-                    strTiempo += ':';
+                    strTiempo.append(':');
                 }
             }
             strResult += strTiempo;
@@ -138,7 +144,7 @@ class Utils {
     }
 
     static String getNotificationTitle(Context context) {
-        return "Seguimiento activo";
+        return "Seguimiento";
     }
 
     public static int[] splitToComponentTimes(long timeInSec)
@@ -149,8 +155,26 @@ class Utils {
         remainder = remainder - mins * 60;
         int secs = remainder;
 
-        int[] ints = {hours , mins , secs};
-        return ints;
+        return new int[]{hours , mins , secs};
+    }
+
+    static boolean checkGPSState(final Context context){
+        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
+            new AlertDialog.Builder(context, R.style.AlertDialogCustom)
+                    .setTitle(R.string.gps_not_found_title)  // GPS not found
+                    .setMessage(R.string.gps_not_found_message) // Want to enable?
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.location_settings_yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.cancel();
+//                            context.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                        }
+                    })
+                    .show();
+            return false;
+        }
+        return true;
     }
 
 }
