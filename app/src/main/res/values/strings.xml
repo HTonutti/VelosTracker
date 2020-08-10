@@ -15,11 +15,13 @@
     <string name="historic_item_date">Fecha</string>
     <string name="historic_item_average">Promedio</string>
     <string name="conf_follow_title">Seguimiento</string>
-    <string name="conf_follow_description">El mapa seguirá continuamente la ubicación actual según esta cambie</string>
+    <string name="conf_follow_description">El mapa seguirá continuamente la nueva ubicación actual.</string>
     <string name="conf_pause_title">Pausa automática</string>
-    <string name="conf_pause_description">Detiene y reanuda automáticamente el cronómetro. La pausa se produce si la ubicación no varia durante 10 segundos</string>
+    <string name="conf_pause_description">Detiene y reanuda automáticamente el cronómetro. Se produce si la ubicación no varia durante 10 segundos.</string>
     <string name="conf_mode_title">Modo</string>
     <string name="conf_mode_description">Según la actividad que desarrolle se ajusta la velocidad de actualización</string>
+    <string name="conf_marker_title">Marcadores</string>
+    <string name="conf_marker_description">Permite visualizar los marcadores de distancia en el mapa al visualizar un recorrido</string>
     <string name="auth_btn_google">GOOGLE</string>
     <string name="txt_auth">Autenticación</string>
     <string name="auth_image">Imagen de autenticación</string>

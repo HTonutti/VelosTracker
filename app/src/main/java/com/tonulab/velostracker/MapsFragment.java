@@ -2,7 +2,9 @@ package com.tonulab.velostracker;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.InflateException;
@@ -16,22 +18,26 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
 
+    static float DISTANCE_BETWEEN_MARKERS = 1f;
     //Latitud y longitud de donde se situa la camara
     private double lat;
     private double lon;
@@ -39,6 +45,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     FusedLocationProviderClient fusedLocationClient = null;
 
     private boolean startLocation = true;
+    ArrayList<PolyNode> polyNodeArray = new ArrayList<>();
 
     private View view;
 
@@ -123,7 +130,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         this.startLocation = startLocation;
     }
 
-    public void updatePolyline(ArrayList<PolyNode> polyNodeArray){
+    public void updatePolyline(ArrayList<PolyNode> PolyNodeArray){
+        if (PolyNodeArray != null)
+            polyNodeArray = PolyNodeArray;
         if (getMapState()){
             PolylineOptions polyline = new PolylineOptions().width(15).color(Color.RED);
             for (int i = 0; i < polyNodeArray.size(); i++) {
@@ -131,6 +140,22 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             }
             clearMap();
             mMap.addPolyline(polyline);
+        }
+
+    }
+
+    public void addMarkers() {
+        float presentGoalDistance = DISTANCE_BETWEEN_MARKERS;
+        BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.mipmap.ic_marker,null);
+        Bitmap smallMarker = Bitmap.createScaledBitmap(bitmapdraw.getBitmap(), 70, 70, false);
+        for (int i = 0; i < polyNodeArray.size(); i++) {
+            if (polyNodeArray.get(i).getDistance() >= presentGoalDistance) {
+                mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(polyNodeArray.get(i).getLatitude(), polyNodeArray.get(i).getLongitude()))
+                        .title((int) presentGoalDistance + " KM")
+                        .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+                presentGoalDistance += DISTANCE_BETWEEN_MARKERS;
+            }
         }
 
     }

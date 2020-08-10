@@ -29,6 +29,7 @@ public class ConfigurationFragment extends Fragment implements
 
     Switch swt_follow;
     Switch swt_pause;
+    Switch swt_marker;
     AppCompatImageButton btn_mode;
     AppCompatImageButton btn_logout;
 
@@ -39,6 +40,7 @@ public class ConfigurationFragment extends Fragment implements
         final View rootView = inflater.inflate(R.layout.configuration, container, false);
         swt_follow = rootView.findViewById(R.id.switch_follow);
         swt_pause = rootView.findViewById(R.id.switch_pause);
+        swt_marker = rootView.findViewById(R.id.switch_marker);
         btn_mode = rootView.findViewById(R.id.btn_mode);
         btn_logout = rootView.findViewById(R.id.btn_logout);
 
@@ -56,6 +58,14 @@ public class ConfigurationFragment extends Fragment implements
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 Utils.setLeisurelyTime(context, isChecked);
+            }
+        });
+
+        swt_marker.setChecked(Utils.getMarkers(getContext()));
+        swt_marker.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Utils.setMarkers(context, isChecked);
             }
         });
 

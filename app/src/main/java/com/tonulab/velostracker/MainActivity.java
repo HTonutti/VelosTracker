@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements
     private BigDecimal avg = BigDecimal.valueOf(0);
     private String userId = "";
     private String provider = "";
+    private boolean showMarkers = false;
 
     private ArrayList<PolyNode> polyNodeArray = null;
     private Stack<Integer> stackMenu = new Stack<>();
@@ -428,6 +429,16 @@ public class MainActivity extends AppCompatActivity implements
         else if (key.equals(Utils.TRACKING)){
             setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
         }
+        else if (key.equals(Utils.MARKERS)){
+            showMarkers = (sharedPreferences.getBoolean(Utils.MARKERS, false));
+            if (toShow){
+                if (showMarkers)
+                    mapsFragment.addMarkers();
+                else{
+                    mapsFragment.updatePolyline(null);
+                }
+            }
+        }
 
         if (key.equals(Utils.UPDATE_STATE) || key.equals(Utils.PAUSED_UPDATE))
             setStopButtonVisibility();
@@ -463,6 +474,8 @@ public class MainActivity extends AppCompatActivity implements
         navView.setSelectedItemId(R.id.menu_map);
         tracing.setValue(false);
         updateDataPack(dataPack);
+        if (showMarkers)
+            mapsFragment.addMarkers();
         if (dataPack.getPolyline() != null) {
             Location auxLocation = new Location("");
             auxLocation.setLatitude(polyNodeArray.get(0).getLatitude());
@@ -506,10 +519,8 @@ public class MainActivity extends AppCompatActivity implements
                 elevationFragment.setPoints(polyNodeArray);
             }
         }
-
         updateAverage();
         updateTextViews();
-
     }
 
     private void updateAverage(){

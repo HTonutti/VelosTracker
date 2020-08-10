@@ -40,6 +40,7 @@ class Utils {
     static final String MODE = "mode";
     static final String TRACKING = "tracking";
     static final String LEISURELY_TIME = "leisurely_time";
+    static final String MARKERS = "markers";
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
     static private String selectedMode = CICLISMO.toString();
@@ -90,6 +91,18 @@ class Utils {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putBoolean(LEISURELY_TIME, tracking)
+                .apply();
+    }
+
+    static boolean getMarkers(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(LEISURELY_TIME, false);
+    }
+
+    static void setMarkers(Context context, boolean markers) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(MARKERS, markers)
                 .apply();
     }
 

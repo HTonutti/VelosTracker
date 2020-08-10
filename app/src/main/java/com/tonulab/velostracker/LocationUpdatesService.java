@@ -213,7 +213,7 @@ public class LocationUpdatesService extends Service implements
         leisurelyTime = false;
         beganLeisurelyTime = false;
         startTime = System.currentTimeMillis();
-        roundedDistance = 0D;
+        roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
         currentTime = accumulatedTime;
         requestLocationUpdates();
     }
@@ -487,7 +487,7 @@ public class LocationUpdatesService extends Service implements
         Log.i(TAG, "Tiempo resumido");
         leisurelyTime = false;
         startTime = System.currentTimeMillis();
-        roundedDistance = 0D;
+        roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
         currentTime = accumulatedTime;
         timer = new Timer();
         timer.scheduleAtFixedRate(new timeUpdateTask(), 0, 1000);
@@ -521,7 +521,7 @@ public class LocationUpdatesService extends Service implements
 
     private void manageLeisurelyTime(){
         if (Utils.getLeisurelyTime(this) && !Utils.getPausedState(this)){
-            Float distance = calcCloseness();
+            Float distance = calculateCloseness();
             if (distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation){
                 if (!beganLeisurelyTime){
                     startLeisurelyTime = System.currentTimeMillis();
@@ -539,7 +539,7 @@ public class LocationUpdatesService extends Service implements
         }
     }
 
-    private Float calcCloseness() {
+    private Float calculateCloseness() {
         double accumLat = 0D;
         double accumLon = 0D;
         Queue<Location> auxLocation = new LinkedList<>(locationsForLeisurely);
