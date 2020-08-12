@@ -36,4 +36,11 @@
     <string name="gps_not_found_title">El gps no se encuentra activado</string>
     <string name="gps_not_found_message">No se puede continuar sin tener las actualizaciones de ubicación</string>
     <string name="center_text">TIEMPO</string>
+    <string name="auth_error">Error al autenticar</string>
+    <string name="auth_reg_mail">El correo ya se encuentra registrado</string>
+    <string name="auth_no_reg_mail">El correo no se encuentra registrado</string>
+    <string name="auth_wrong_pass_mail">La contraseña es incorrecta o el correo está mal ingresado</string>
+    <string name="auth_forgot_pass">Olvide mi contraseña</string>
+    <string name="auth_wrong_mail_in_forgot">Error al recuperar contraseña, por favor verifique su dirección de correo electrónico</string>
+    <string name="auth_info_mail_send">Ya se enviado el correo a su casilla, por favor compruebela</string>
 </resources>

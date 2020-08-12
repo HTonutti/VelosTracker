@@ -6,6 +6,7 @@
     <color name="colorText">#000000</color>
     <color name="colorTextItemTitle">#60605E</color>
     <color name="colorAccent">#FFFF00</color>
+    <color name="colorAccentLight">#75FFFF00</color>
     <color name="colorAccentBackground">#D5D5D2</color>
     <color name="colorIconMenu">#FFFFFF</color>
     <color name="colorAuthBackground">#FFFFFF</color>
