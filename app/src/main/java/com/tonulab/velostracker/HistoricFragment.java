@@ -96,7 +96,6 @@ public class HistoricFragment extends Fragment {
         Pair<String, LinkedHashMap<String, DataPack>> pairAux = adapter.remove(posItemToDelete);
         firebaseManager.removeFromFirebase(pairAux.first);
         registers = pairAux.second;
-//        firebaseManager.readFromFirebase();
         adapter.notifyDataSetChanged();
         if (posItemToDelete != 0) {
             scroll(posItemToDelete - 1);
@@ -118,7 +117,7 @@ public class HistoricFragment extends Fragment {
                     }
                 };
                 Handler handler = new Handler();
-                handler.postDelayed(r, 3000);
+                handler.postDelayed(r, 10000);
             }
             else
                 auxArray.add("No se tienen registros");

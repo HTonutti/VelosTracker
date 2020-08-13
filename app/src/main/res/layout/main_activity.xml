@@ -44,16 +44,16 @@
                 style="@style/UnitsMain"
                 android:layout_weight="0.33"
                 android:background="@color/colorAccent"
-                android:text="@string/mts" />
+                android:text="@string/km" />
 
             <TextView
                 android:id="@+id/center_text"
                 style="@style/UnitsMain"
                 android:layout_weight="0.36"
                 android:background="@color/colorText"
-                android:drawableTint="@color/colorAccent"
                 android:text="@string/center_text"
-                android:textColor="@color/colorAccent" />
+                android:textColor="@color/colorAccent"
+                app:drawableTint="@color/colorAccent" />
 
             <TextView
                 android:id="@+id/units_avg"
@@ -100,6 +100,7 @@
             android:id="@+id/bottom_navigation"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/colorPrimaryDark"
             android:clickable="false"
             app:itemIconSize="@dimen/bottom_navigation_icon_size"
             app:itemIconTint="@color/colorIconMenu"
@@ -115,6 +116,7 @@
         android:layout_gravity="start"
         android:background="@drawable/rounded_corner_stop"
         android:text="@string/detener_main"
+        android:textColor="@color/colorText"
         android:textSize="@dimen/text_size_stop"
         app:layout_anchor="@+id/linearLayout"
         app:layout_anchorGravity="start|bottom" />

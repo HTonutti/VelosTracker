@@ -12,14 +12,17 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.LinkedHashMap;
+import java.util.Vector;
 
 public final class FirebaseManager {
 
     private static FirebaseManager firebaseManager = null;
 
     private HistoricFragment historicFragment;
+    private CalendarFragment calendarFragment;
     private DatabaseReference mDatabase;
     private LinkedHashMap<String, DataPack> registers = new LinkedHashMap<>();
+    private Vector<DataPack> rawDataPack = new Vector<>();
     private String TAG = FirebaseManager.class.getSimpleName();
     private long nroReg = 0;
     private int contRegRead = 0;
@@ -27,6 +30,10 @@ public final class FirebaseManager {
 
     public void setHistoricFragment(HistoricFragment historicFragment){
         this.historicFragment = historicFragment;
+    }
+
+    public void setCalendarFragment(CalendarFragment calendarFragment){
+        this.calendarFragment = calendarFragment;
     }
 
     public void setUserID(String userID){
@@ -67,6 +74,7 @@ public final class FirebaseManager {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     registers = new LinkedHashMap<>();
+                    rawDataPack = new Vector<>();
                     contRegRead = 0;
                     nroReg = snapshot.getChildrenCount();
                     if (nroReg == 0)
@@ -81,8 +89,11 @@ public final class FirebaseManager {
                                 String key = snapshot.getKey();
                                 contRegRead += 1;
                                 registers.put(key, data);
-                                if (contRegRead == nroReg)
+                                rawDataPack.add(data);
+                                if (contRegRead == nroReg) {
                                     historicFragment.setRegisters(registers);
+                                    calendarFragment.setRegisters(rawDataPack);
+                                }
                             }
 
                             @Override

@@ -1,17 +1,14 @@
 package com.tonulab.velostracker;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -80,7 +77,8 @@ public class MainActivity extends AppCompatActivity implements
     private MapsFragment mapsFragment = null;
     private HistoricFragment historicFragment = null;
     private ConfigurationFragment configurationFragment = null;
-    private ElevationFragment elevationFragment = null;
+//    private ElevationFragment elevationFragment = null;
+    private CalendarFragment calendarFragment = null;
     private FragmentManager fm = getSupportFragmentManager();
 
     private TextView txtDistance;
@@ -151,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements
         configurationFragment = new ConfigurationFragment();
         configurationFragment.setMainActivity(this);
 
-        elevationFragment = new ElevationFragment();
+//        elevationFragment = new ElevationFragment();
 
         receiver = new Receiver();
         receiver.setMainActivity(this);
@@ -159,11 +157,16 @@ public class MainActivity extends AppCompatActivity implements
         historicFragment = new HistoricFragment();
         historicFragment.setMainActivity(this);
 
+        calendarFragment = new CalendarFragment();
+
         FirebaseManager firebaseManager = FirebaseManager.getInstance();
         firebaseManager.setUserID(userId);
         firebaseManager.setHistoricFragment(historicFragment);
+        firebaseManager.setCalendarFragment(calendarFragment);
 
         historicFragment.setFirebaseManager(firebaseManager);
+
+        showMarkers = Utils.getMarkers(this);
 
         tracing = new ActiveVariable();
         txtDistance = findViewById(R.id.txt_dist);
@@ -263,12 +266,12 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     }
-                    case R.id.menu_elev: {
-                        if (!(fm.findFragmentById(R.id.fragment_container) instanceof ElevationFragment)) {
+                    case R.id.menu_calendar: {
+                        if (!(fm.findFragmentById(R.id.fragment_container) instanceof CalendarFragment)) {
                             stackMenu.removeElement(id);
                             stackMenu.push(id);
                             fm.beginTransaction()
-                                    .replace(R.id.fragment_container, elevationFragment)
+                                    .replace(R.id.fragment_container, calendarFragment)
                                     .addToBackStack(null)
                                     .commit();
                         }
@@ -305,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements
                             distance = "0";
                             time = 0;
                             avg = BigDecimal.valueOf(0);
-                            elevationFragment.resetPoints();
+//                            elevationFragment.resetPoints();
                             stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
                             mService.startLocationUpdate();
                         }
@@ -469,7 +472,7 @@ public class MainActivity extends AppCompatActivity implements
 
     public void showRegister(DataPack dataPack){
         toShow = true;
-        elevationFragment.resetPoints();
+//        elevationFragment.resetPoints();
         mapsFragment.setStartLocation(false);
         navView.setSelectedItemId(R.id.menu_map);
         tracing.setValue(false);
@@ -516,7 +519,7 @@ public class MainActivity extends AppCompatActivity implements
         if (dataPack.getPolyline() != null){
             if (dataPack.getPolyline().size() > 0){
                 updatePolyline(dataPack.getPolyline());
-                elevationFragment.setPoints(polyNodeArray);
+//                elevationFragment.setPoints(polyNodeArray);
             }
         }
         updateAverage();

@@ -11,8 +11,7 @@ public class DataPack implements Parcelable {
     public String time;
     public String date;
     public String average;
-    public
-    ArrayList<PolyNode> polyline;
+    public ArrayList<PolyNode> polyline;
 
     public DataPack(){}
 

@@ -4,7 +4,7 @@
 
     <string name="menu1">Mapa</string>
     <string name="menu2">Recorridos</string>
-    <string name="menu3">Elevación</string>
+    <string name="menu3">Calendario</string>
     <string name="menu4">Opciones</string>
     <string name="mode1">Bicicleta</string>
     <string name="mode2">Running</string>
@@ -30,7 +30,7 @@
     <string name="auth_reg">Registrar</string>
     <string name="auth_acc">Acceder</string>
     <string name="detener_main">Detener</string>
-    <string name="mts">KMS</string>
+    <string name="km">KMS</string>
     <string name="km_h">KM/H</string>
     <string name="location_settings_yes">Ir a las opciones</string>
     <string name="gps_not_found_title">El gps no se encuentra activado</string>
@@ -43,4 +43,9 @@
     <string name="auth_forgot_pass">Olvide mi contraseña</string>
     <string name="auth_wrong_mail_in_forgot">Error al recuperar contraseña, por favor verifique su dirección de correo electrónico</string>
     <string name="auth_info_mail_send">Ya se enviado el correo a su casilla, por favor compruebela</string>
+    <string name="cld_month_title">MES</string>
+    <string name="cld_total_title">TOTAL</string>
+    <string name="cld_week_title">SEMANA</string>
+    <string name="cld_day_title">DIA</string>
+    <string name="zero_value">0.00</string>
 </resources>
