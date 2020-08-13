@@ -15,8 +15,6 @@ import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 import com.prolificinteractive.materialcalendarview.OnMonthChangedListener;
 
 import java.text.DateFormat;
-import java.time.LocalDate;
-import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -35,6 +33,7 @@ public class CalendarFragment extends Fragment {
     TextView txt_week_avg;
     TextView txt_day_dist;
     TextView txt_day_avg;
+    CalendarDay selectedDate = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -49,15 +48,21 @@ public class CalendarFragment extends Fragment {
         txt_day_dist = rootView.findViewById(R.id.txt_cld_day_dist);
         txt_day_avg = rootView.findViewById(R.id.txt_cld_day_prom);
 
+        if(selectedDate == null) {
+            selectedDate = CalendarDay.today();
+        }
+        
         if (dataPackVector.size() > 0)
-            refreshToCurrentDate();
+            refreshAll(selectedDate);
 
-        calendar.setDateSelected(CalendarDay.today(), true);
+        calendar.setDateSelected(selectedDate, true);
         calendar.setOnDateChangedListener(new OnDateSelectedListener() {
             @Override
             public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
-                if (selected)
-                    refreshDay(date.getYear(), date.getMonth(), date.getDay());
+                if (selected) {
+                    refreshDayAndWeek(date.getYear(), date.getMonth(), date.getDay());
+                    selectedDate = date;
+                }
             }
         });
         calendar.setOnMonthChangedListener(new OnMonthChangedListener() {
@@ -72,11 +77,11 @@ public class CalendarFragment extends Fragment {
     public void setRegisters(Vector<DataPack> dataPacks){
         dataPackVector = dataPacks;
         if (calendar != null){
-            refreshToCurrentDate();
+            refreshAll(selectedDate);
         }
     }
 
-    private void refreshDay(int year, int month, int dayOfMonth){
+    private void refreshDayAndWeek(int year, int month, int dayOfMonth){
         double acuDistDay = 0D;
         double acuAvgDay = 0D;
         int cantDay = 0;
@@ -168,12 +173,9 @@ public class CalendarFragment extends Fragment {
         else return stringValue.concat(".00");
     }
 
-    private void refreshToCurrentDate(){
-        if (calendar.getSelectedDate() != null)
-            refreshDay(calendar.getSelectedDate().getYear(), calendar.getSelectedDate().getMonth(), calendar.getSelectedDate().getDay());
-        else
-            refreshDay(CalendarDay.today().getYear(), CalendarDay.today().getMonth(), CalendarDay.today().getDay());
-        refreshMonth(CalendarDay.today().getYear(), CalendarDay.today().getMonth());
+    private void refreshAll(CalendarDay date){
+        refreshDayAndWeek(date.getYear(), date.getMonth(), date.getDay());
+        refreshMonth(date.getYear(), date.getMonth());
         refreshTotal();
     }
 
@@ -195,7 +197,8 @@ public class CalendarFragment extends Fragment {
         c.set(Calendar.MILLISECOND, 0);
 
         Date monday = c.getTime();
-        Date nextMonday= new Date(monday.getTime()+7*24*60*60*1000);
+        monday = new Date(monday.getTime()-(24*60*60*1000));
+        Date nextMonday= new Date(monday.getTime()+8*24*60*60*1000);
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
         ArrayList<Integer> arrayMonday = decomposeDate(DFormat.format(monday));
