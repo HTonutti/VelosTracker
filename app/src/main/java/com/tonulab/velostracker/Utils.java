@@ -1,8 +1,14 @@
 package com.tonulab.velostracker;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
 import android.preference.PreferenceManager;
+
+import com.google.android.gms.maps.model.CameraPosition;
 
 import java.math.BigDecimal;
 
@@ -33,9 +39,12 @@ class Utils {
     static final String PAUSED_UPDATE = "paused_update";
     static final String MODE = "mode";
     static final String TRACKING = "tracking";
+    static final String LEISURELY_TIME = "leisurely_time";
+    static final String MARKERS = "markers";
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
     static private String selectedMode = CICLISMO.toString();
+    static AlertDialog alertDialog;
 
 
     static boolean getUpdateState(Context context) {
@@ -55,10 +64,10 @@ class Utils {
                 .getBoolean(PAUSED_UPDATE, false);
     }
 
-    static void setPausedState(Context context, boolean updateState) {
+    static void setPausedState(Context context, boolean pauseState) {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putBoolean(PAUSED_UPDATE, updateState)
+                .putBoolean(PAUSED_UPDATE, pauseState)
                 .apply();
     }
 
@@ -71,6 +80,30 @@ class Utils {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putBoolean(TRACKING, tracking)
+                .apply();
+    }
+
+    static boolean getLeisurelyTime(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(LEISURELY_TIME, false);
+    }
+
+    static void setLeisurelyTime(Context context, boolean tracking) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(LEISURELY_TIME, tracking)
+                .apply();
+    }
+
+    static boolean getMarkers(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(LEISURELY_TIME, false);
+    }
+
+    static void setMarkers(Context context, boolean markers) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(MARKERS, markers)
                 .apply();
     }
 
@@ -89,7 +122,7 @@ class Utils {
 
     static Float getMtsRefresh(){
         if (selectedMode.equals(MODES.PEDESTRISMO.toString()))
-            return 2.0f;
+            return 5.0f;
         if (selectedMode.equals(AUTOMOVILISMO.toString()))
             return 30.0f;
         return 10.0f;
@@ -107,16 +140,16 @@ class Utils {
         }
         if (time != null){
             int[] auxTime = splitToComponentTimes(time);
-            String strTiempo = "";
+            StringBuilder strTiempo = new StringBuilder();
             for (int i = 0; i < 3; i++) {
                 if (auxTime[i] < 10){
-                    strTiempo += "0" + auxTime[i];
+                    strTiempo.append("0").append(auxTime[i]);
                 }
                 else{
-                    strTiempo += auxTime[i];
+                    strTiempo.append(auxTime[i]);
                 }
                 if (i != 2){
-                    strTiempo += ':';
+                    strTiempo.append(':');
                 }
             }
             strResult += strTiempo;
@@ -125,7 +158,7 @@ class Utils {
     }
 
     static String getNotificationTitle(Context context) {
-        return "Seguimiento activo";
+        return "Seguimiento";
     }
 
     public static int[] splitToComponentTimes(long timeInSec)
@@ -136,8 +169,32 @@ class Utils {
         remainder = remainder - mins * 60;
         int secs = remainder;
 
-        int[] ints = {hours , mins , secs};
-        return ints;
+        return new int[]{hours , mins , secs};
+    }
+
+    static boolean checkGPSState(final Context context){
+        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
+            createAlertDialog(context);
+            return false;
+        }
+        return true;
+    }
+
+    private static void createAlertDialog(final Context context){
+        if (alertDialog == null) {
+            alertDialog = new AlertDialog.Builder(context, R.style.AlertDialogCustom)
+                    .setTitle(R.string.gps_not_found_title)  // GPS not found
+                    .setMessage(R.string.gps_not_found_message) // Want to enable?
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.location_settings_yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            context.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            dialogInterface.dismiss();
+                        }
+                    })
+                    .show();
+        }
     }
 
 }

@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -20,11 +20,28 @@
     </style>
 
     <style name="TextViewsMain">
-        <item name="android:background">@drawable/rounded_corner</item>
+        <item name="android:background">@drawable/rounded_corner_metrics</item>
         <item name="android:textColor">@color/colorText</item>
         <item name="android:textSize">@dimen/text_size_main</item>
         <item name="android:textAlignment">center</item>
         <item name="android:fontFamily">@font/roboto_bold</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="UnitsMain">
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textSize">@dimen/text_size_units_main</item>
+        <item name="android:textAlignment">center</item>
+<!--        <item name="android:background">@color/colorAccent</item>-->
+        <item name="android:layout_gravity">top|center</item>
+        <item name="android:fontFamily">@font/roboto_bold</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="TextViewsItemTitle">
+        <item name="android:textColor">@color/colorTextItemTitle</item>
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
     </style>
@@ -37,10 +54,42 @@
         <item name="android:textAlignment">center</item>
     </style>
 
-    <style name="TextViewsItemTitle">
-        <item name="android:textColor">@color/colorTextItemTitle</item>
+    <style name="UnitsCalendar">
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textSize">@dimen/text_size_units_calendar</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:gravity">bottom|right</item>
+        <item name="android:fontFamily">@font/roboto_bold</item>
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">3</item>
+    </style>
+
+    <style name="TextViewsCalendarTitle">
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:background">@color/colorText</item>
+        <item name="android:fontFamily">@font/roboto_bold</item>
+        <item name="android:textSize">@dimen/text_size_title_calendar</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAlignment">center</item>
+    </style>
+
+    <style name="TextViewsCalendar">
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:background">@color/colorBackgroundCalendarMetrics</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/text_size_metrics_calendar</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAlignment">textEnd</item>
+    </style>
+
+    <style name="TextCalendar">
+        <item name="android:textColor">@color/colorPrimaryDark</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAlignment">center</item>
     </style>
 
     <style name="EditTextsAuthentication">

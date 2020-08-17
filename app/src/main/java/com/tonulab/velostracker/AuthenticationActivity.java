@@ -1,13 +1,17 @@
 package com.tonulab.velostracker;
 
+import android.app.ActionBar;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,8 +38,10 @@ public class AuthenticationActivity extends AppCompatActivity {
     Button btnGoogle;
     Button btnRegister;
     Button btnAccess;
+    Button btnForgot;
     EditText mail;
     EditText pass;
+    TextView txtInfo;
     private int GOOGLE_SIGN_IN = 17;
     private boolean firstEntry = true;
 
@@ -47,9 +53,13 @@ public class AuthenticationActivity extends AppCompatActivity {
         btnGoogle = findViewById(R.id.btn_auth_google);
         btnRegister = findViewById(R.id.btn_auth_reg);
         btnAccess = findViewById(R.id.btn_auth_acc);
+        btnForgot = findViewById(R.id.btn_auth_forgot_pass);
+        txtInfo = findViewById(R.id.txt_info_auth);
         mail = findViewById(R.id.txt_mail);
         pass = findViewById(R.id.txt_pass);
-
+        Utils.setPausedState(this, false);
+        Utils.setUpdateState(this, false);
+        hideForgotButton();
         setListeners();
     }
 
@@ -58,6 +68,7 @@ public class AuthenticationActivity extends AppCompatActivity {
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                hideKeyboard();
                 if(!mail.getText().toString().equals("") && !pass.getText().toString().equals("")){
                     FirebaseAuth.getInstance().createUserWithEmailAndPassword(mail.getText().toString(), pass.getText().toString())
                             .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
@@ -73,6 +84,7 @@ public class AuthenticationActivity extends AppCompatActivity {
         btnAccess.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                hideKeyboard();
                 if(!mail.getText().toString().equals("") && !pass.getText().toString().equals("")){
                     FirebaseAuth.getInstance().signInWithEmailAndPassword(mail.getText().toString(), pass.getText().toString())
                             .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
@@ -88,7 +100,7 @@ public class AuthenticationActivity extends AppCompatActivity {
         btnGoogle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                hideKeyboard();
                 GoogleSignInOptions googleConf = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestIdToken(getString(R.string.default_web_client_id))
                         .requestEmail()
@@ -97,6 +109,41 @@ public class AuthenticationActivity extends AppCompatActivity {
                 GoogleSignInClient googleClient = GoogleSignIn.getClient(getApplicationContext(), googleConf);
                 googleClient.signOut();
                 startActivityForResult(googleClient.getSignInIntent(), GOOGLE_SIGN_IN);
+            }
+        });
+
+        btnForgot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String auxPass = " ";
+                if (!pass.getText().toString().equals(""))
+                    auxPass = pass.getText().toString();
+                FirebaseAuth.getInstance().signInWithEmailAndPassword(mail.getText().toString(), auxPass)
+                        .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                try{
+                                    FirebaseAuth.getInstance().sendPasswordResetEmail(mail.getText().toString())
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        txtInfo.setText(R.string.auth_info_mail_send);
+                                                        Log.i(TAG, "Correo enviado");
+                                                    }
+                                                    else{
+                                                        txtInfo.setText(R.string.auth_wrong_mail_in_forgot);
+                                                    }
+                                                }
+                                            });
+                                }
+                                catch (Exception e){
+                                    e.printStackTrace();
+                                    txtInfo.setText(R.string.auth_wrong_mail_in_forgot);
+                                    Log.e(TAG, "Excepción: problema al enviar el correo");
+                                }
+                            }
+                        });
             }
         });
     }
@@ -143,7 +190,7 @@ public class AuthenticationActivity extends AppCompatActivity {
                 }
             }
             catch (ApiException e){
-                Toast.makeText(getApplicationContext(), "Error al autenticar", Toast.LENGTH_SHORT).show();
+                txtInfo.setText(R.string.auth_error);
                 e.printStackTrace();
                 Log.i(TAG, "Excepción: error al autenticar en cuenta de google");
             }
@@ -158,22 +205,34 @@ public class AuthenticationActivity extends AppCompatActivity {
         else{
             Exception e = task.getException();
             if (e instanceof FirebaseAuthUserCollisionException){
-                Toast.makeText(getApplicationContext(), "El correo ya se encuentra registrado", Toast.LENGTH_SHORT).show();
+                txtInfo.setText(R.string.auth_reg_mail);
                 Log.i(TAG, "Excepción: correo ya registrado");
             }
             else if(e instanceof FirebaseAuthInvalidUserException){
-                Toast.makeText(getApplicationContext(), "El correo no se encuentra registrado", Toast.LENGTH_SHORT).show();
+                txtInfo.setText(R.string.auth_no_reg_mail);
                 Log.i(TAG, "Excepción: correo no registrado");
             }
             else if (e instanceof FirebaseAuthInvalidCredentialsException){
-                Toast.makeText(getApplicationContext(), "La contraseña es incorrecta o el correo está mal ingresado", Toast.LENGTH_SHORT).show();
+                txtInfo.setText(R.string.auth_wrong_pass_mail);
+                ViewGroup.LayoutParams lp = btnForgot.getLayoutParams();
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
                 Log.i(TAG, "Excepción: contraseña incorrecta o correo mal ingresado");
             }
             else{
-                Toast.makeText(getApplicationContext(), "Error al autenticar", Toast.LENGTH_SHORT).show();
+                txtInfo.setText(R.string.auth_error);
                 Log.i(TAG, "Excepción: error al autenticar con cuenta de correo");
             }
         }
+    }
+
+    private void hideKeyboard(){
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(mail.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(pass.getWindowToken(), 0);
+    }
+
+    private void hideForgotButton(){
+        btnForgot.setHeight(0);
     }
 
     private void showMain(String provider, String userId){

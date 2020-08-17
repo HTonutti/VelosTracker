@@ -18,6 +18,7 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -58,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements
             mService = binder.getService();
             mBound = true;
             if (!toShow)
-                mService.requestSendUpdate();
-            if (Utils.getUpdateState(getApplicationContext())) {
+                mService.requestDataPack();
+            if ((Utils.getUpdateState(getApplicationContext()) && !Utils.getPausedState(getApplicationContext()))) {
                 tracing.setValue(true);
             } else {
                 tracing.setValue(false);
@@ -76,13 +77,15 @@ public class MainActivity extends AppCompatActivity implements
     private MapsFragment mapsFragment = null;
     private HistoricFragment historicFragment = null;
     private ConfigurationFragment configurationFragment = null;
-    private ElevationFragment elevationFragment = null;
+//    private ElevationFragment elevationFragment = null;
+    private CalendarFragment calendarFragment = null;
     private FragmentManager fm = getSupportFragmentManager();
 
     private TextView txtDistance;
     private TextView txtTime;
     private TextView txtAvg;
     private FloatingActionButton bPlay;
+    private Button bStop;
     private BottomNavigationView navView;
 
     private ActiveVariable tracing;
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements
     private BigDecimal avg = BigDecimal.valueOf(0);
     private String userId = "";
     private String provider = "";
+    private boolean showMarkers = false;
 
     private ArrayList<PolyNode> polyNodeArray = null;
     private Stack<Integer> stackMenu = new Stack<>();
@@ -108,8 +112,12 @@ public class MainActivity extends AppCompatActivity implements
         setUserProvider();
         inicialization();
         setListeners();
+        setStopButtonVisibility();
+        Utils.checkGPSState(this);
 
-        if (!checkPermissions()) {
+        if (getIntent().getBooleanExtra("showHistoricTab", false))
+            navView.setSelectedItemId(R.id.menu_historic);
+        else if (!checkPermissions()) {
             requestPermissions();
             navView.setSelectedItemId(R.id.menu_setting);
         }
@@ -141,8 +149,7 @@ public class MainActivity extends AppCompatActivity implements
         configurationFragment = new ConfigurationFragment();
         configurationFragment.setMainActivity(this);
 
-        elevationFragment = new ElevationFragment();
-        elevationFragment.setMainActivity(this);
+//        elevationFragment = new ElevationFragment();
 
         receiver = new Receiver();
         receiver.setMainActivity(this);
@@ -150,17 +157,23 @@ public class MainActivity extends AppCompatActivity implements
         historicFragment = new HistoricFragment();
         historicFragment.setMainActivity(this);
 
+        calendarFragment = new CalendarFragment();
+
         FirebaseManager firebaseManager = FirebaseManager.getInstance();
         firebaseManager.setUserID(userId);
         firebaseManager.setHistoricFragment(historicFragment);
+        firebaseManager.setCalendarFragment(calendarFragment);
 
         historicFragment.setFirebaseManager(firebaseManager);
+
+        showMarkers = Utils.getMarkers(this);
 
         tracing = new ActiveVariable();
         txtDistance = findViewById(R.id.txt_dist);
         txtTime = findViewById(R.id.txt_time);
         txtAvg = findViewById(R.id.txt_avg);
-        bPlay = findViewById(R.id.b_play);
+        bPlay = findViewById(R.id.b_play_pause);
+        bStop = findViewById(R.id.btn_stop);
         navView = findViewById(R.id.bottom_navigation);
     }
 
@@ -182,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
         updateTextViews();
+        Utils.checkGPSState(this);
         super.onResume();
     }
 
@@ -252,12 +266,12 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         break;
                     }
-                    case R.id.menu_elev: {
-                        if (!(fm.findFragmentById(R.id.fragment_container) instanceof ElevationFragment)) {
+                    case R.id.menu_calendar: {
+                        if (!(fm.findFragmentById(R.id.fragment_container) instanceof CalendarFragment)) {
                             stackMenu.removeElement(id);
                             stackMenu.push(id);
                             fm.beginTransaction()
-                                    .replace(R.id.fragment_container, elevationFragment)
+                                    .replace(R.id.fragment_container, calendarFragment)
                                     .addToBackStack(null)
                                     .commit();
                         }
@@ -287,21 +301,23 @@ public class MainActivity extends AppCompatActivity implements
                     if (!checkPermissions()) {
                         requestPermissions();
                     } else if(mBound){
-                        if (!Utils.getUpdateState(getApplicationContext())){
-                            stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
+                        if (Utils.getPausedState(getApplicationContext()))
+                            mService.resumeLocationUpdate();
+                        else if (!Utils.getUpdateState(getApplicationContext())) {
                             toShow = false;
                             distance = "0";
                             time = 0;
                             avg = BigDecimal.valueOf(0);
-                            elevationFragment.resetPoints();
-                            mService.requestLocationUpdates();
+//                            elevationFragment.resetPoints();
+                            stopService(new Intent(MainActivity.this, LocationUpdatesService.class));
+                            mService.startLocationUpdate();
                         }
                     }
                 }
                 else if(mBound){
                     setButtonImage(true);
-                    if (Utils.getUpdateState(getApplicationContext())){
-                        mService.removeLocationUpdates();
+                    if (!Utils.getPausedState(getApplicationContext()) && Utils.getUpdateState(getApplicationContext())){
+                        mService.pauseLocationUpdate();
                     }
                 }
             }
@@ -311,6 +327,15 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 tracing.setValue(!tracing.getValue());
+            }
+        });
+        bStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mBound && Utils.getUpdateState(getApplicationContext())) {
+                    mService.stopLocationUpdate(false);
+                    navView.setSelectedItemId(R.id.menu_historic);
+                }
             }
         });
     }
@@ -407,13 +432,34 @@ public class MainActivity extends AppCompatActivity implements
         else if (key.equals(Utils.TRACKING)){
             setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
         }
+        else if (key.equals(Utils.MARKERS)){
+            showMarkers = (sharedPreferences.getBoolean(Utils.MARKERS, false));
+            if (toShow){
+                if (showMarkers)
+                    mapsFragment.addMarkers();
+                else{
+                    mapsFragment.updatePolyline(null);
+                }
+            }
+        }
+
+        if (key.equals(Utils.UPDATE_STATE) || key.equals(Utils.PAUSED_UPDATE))
+            setStopButtonVisibility();
+
     }
 
     private void setButtonImage(boolean state){
         if (state)
             bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
         else
-            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_stop, getTheme()));
+            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+    }
+
+    private void setStopButtonVisibility(){
+        if (!Utils.getPausedState(this) && !Utils.getUpdateState(this))
+            bStop.setVisibility(View.INVISIBLE);
+        else
+            bStop.setVisibility(View.VISIBLE);
     }
 
     public void setMapTracking(boolean mapTracking){
@@ -426,11 +472,13 @@ public class MainActivity extends AppCompatActivity implements
 
     public void showRegister(DataPack dataPack){
         toShow = true;
-        elevationFragment.resetPoints();
+//        elevationFragment.resetPoints();
         mapsFragment.setStartLocation(false);
         navView.setSelectedItemId(R.id.menu_map);
         tracing.setValue(false);
         updateDataPack(dataPack);
+        if (showMarkers)
+            mapsFragment.addMarkers();
         if (dataPack.getPolyline() != null) {
             Location auxLocation = new Location("");
             auxLocation.setLatitude(polyNodeArray.get(0).getLatitude());
@@ -449,7 +497,7 @@ public class MainActivity extends AppCompatActivity implements
         mapsFragment.setLat(loc.getLatitude());
         mapsFragment.setLon(loc.getLongitude());
         if (mapTracking)
-            mapsFragment.moveCamera(16);
+            mapsFragment.moveCamera();
     }
 
     public void updateTime(long time){
@@ -471,13 +519,11 @@ public class MainActivity extends AppCompatActivity implements
         if (dataPack.getPolyline() != null){
             if (dataPack.getPolyline().size() > 0){
                 updatePolyline(dataPack.getPolyline());
-                elevationFragment.setPoints(polyNodeArray);
+//                elevationFragment.setPoints(polyNodeArray);
             }
         }
-
         updateAverage();
         updateTextViews();
-
     }
 
     private void updateAverage(){
@@ -493,18 +539,11 @@ public class MainActivity extends AppCompatActivity implements
 
     private void updateTextViews(){
         txtTime.setText(DateUtils.formatElapsedTime(time));
-        txtDistance.setText(String.format("%s km", distance));
-        txtAvg.setText(String.format("%s km/h", avg));
+        txtDistance.setText(distance);
+        txtAvg.setText(String.valueOf(avg));
     }
 
     public void shutdown(boolean logout){
-//        mService.reset();
-//        mapTracking = false;
-//        toShow = false;
-//        userId = "";
-//        provider = "";
-//        stackMenu = new Stack<>();
-//        fm = getSupportFragmentManager();
         if (logout){
             FirebaseAuth.getInstance().signOut();
             PreferenceManager.getDefaultSharedPreferences(this)

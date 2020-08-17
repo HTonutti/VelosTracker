@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:baselineAligned="false">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,7 +21,7 @@
         <TextView
             android:id="@+id/txt_item_dist"
             style="@style/TextViewsItem"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="0.7"
             android:textSize="24sp" />
 
@@ -35,6 +37,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="0.7"
+            android:baselineAligned="false"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -54,7 +57,6 @@
                     android:id="@+id/txt_item_time"
                     style="@style/TextViewsItem"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.5"
                     android:textSize="20sp" />
 
             </LinearLayout>
@@ -76,7 +78,6 @@
                     android:id="@+id/txt_item_avg"
                     style="@style/TextViewsItem"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.5"
                     android:textSize="20sp" />
 
             </LinearLayout>
@@ -101,7 +102,7 @@
                 android:id="@+id/txt_item_date"
                 style="@style/TextViewsItem"
                 android:layout_height="match_parent"
-                android:textSize="14sp" />"/>
+                android:textSize="14sp" />
 
         </LinearLayout>
 

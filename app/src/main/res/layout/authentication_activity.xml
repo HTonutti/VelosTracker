@@ -48,6 +48,21 @@
         android:layout_width="match_parent"
         android:layout_height="10dp" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_auth_forgot_pass"
+        android:layout_width="match_parent"
+        android:layout_height="0sp"
+        android:layout_marginLeft="@dimen/margin_side_layout"
+        android:layout_marginRight="@dimen/margin_side_layout"
+        android:text="@string/auth_forgot_pass"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:textAlignment="center"
+        android:textSize="@dimen/text_size_auth_btn_forgot_pass" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -55,25 +70,28 @@
         android:layout_marginRight="@dimen/margin_side_layout"
         android:orientation="horizontal">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_auth_reg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@color/colorText"
+            android:backgroundTint="@color/colorText"
             android:textColor="@color/colorAccent"
+            android:textSize="@dimen/text_size_auth_btn"
             android:text="@string/auth_reg" />
 
         <Space
             android:layout_width="8dp"
             android:layout_height="wrap_content" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_auth_acc"
-            android:background="@color/colorAccent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textColor="@color/colorText"
+            android:backgroundTint="@color/colorAccent"
+            android:textSize="@dimen/text_size_auth_btn"
             android:text="@string/auth_acc" />
     </LinearLayout>
 
@@ -81,17 +99,36 @@
         android:layout_width="match_parent"
         android:layout_height="10dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_auth_google"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/auth_btn_google"
+        android:layout_marginLeft="@dimen/margin_side_layout"
+        android:layout_marginRight="@dimen/margin_side_layout"
+        android:backgroundTint="@color/colorAuthBackground"
+        app:icon="@drawable/googleg_standard_color_18"
+        app:iconGravity="textStart"
+        app:iconTint="@null"
+        app:iconSize="@dimen/auth_btn_img_google"
+        android:paddingStart="20dp"
+        android:paddingEnd="50dp"
+        android:text="@string/auth_btn_google"
+        android:textAlignment="center"
+        android:textSize="@dimen/text_size_auth_btn_google"
+        android:textColor="@color/colorText" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <TextView
+        android:id="@+id/txt_info_auth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="@dimen/margin_side_layout"
         android:layout_marginRight="@dimen/margin_side_layout"
-        android:background="@color/colorAuthBackground"
-        android:drawableStart="@drawable/logo_google"
-        android:paddingStart="20dp"
-        android:paddingEnd="50dp"
-        android:text="@string/auth_btn_google"
-        android:textAlignment="center" />
+        android:text=""
+        android:textAlignment="center"
+        android:textSize="@dimen/text_size_auth" />
 
 </LinearLayout>

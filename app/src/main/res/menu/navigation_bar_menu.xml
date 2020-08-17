@@ -26,9 +26,9 @@
         android:enabled="false"
         app:showAsAction="always" />
     <item
-        android:id="@+id/menu_elev"
+        android:id="@+id/menu_calendar"
         android:title="@string/menu3"
-        android:icon="@drawable/ic_elevation"
+        android:icon="@drawable/ic_calendar"
         android:checkable="false"
         android:checked="false"
         android:enabled="true"

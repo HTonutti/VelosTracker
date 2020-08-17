@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +14,6 @@ import android.widget.Switch;
 
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.fragment.app.Fragment;
-
-import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +28,8 @@ public class ConfigurationFragment extends Fragment implements
     private Context context;
 
     Switch swt_follow;
+    Switch swt_pause;
+    Switch swt_marker;
     AppCompatImageButton btn_mode;
     AppCompatImageButton btn_logout;
 
@@ -40,6 +39,8 @@ public class ConfigurationFragment extends Fragment implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.configuration, container, false);
         swt_follow = rootView.findViewById(R.id.switch_follow);
+        swt_pause = rootView.findViewById(R.id.switch_pause);
+        swt_marker = rootView.findViewById(R.id.switch_marker);
         btn_mode = rootView.findViewById(R.id.btn_mode);
         btn_logout = rootView.findViewById(R.id.btn_logout);
 
@@ -49,6 +50,22 @@ public class ConfigurationFragment extends Fragment implements
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 Utils.setTracking(context, isChecked);
+            }
+        });
+
+        swt_pause.setChecked(Utils.getLeisurelyTime(getContext()));
+        swt_pause.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Utils.setLeisurelyTime(context, isChecked);
+            }
+        });
+
+        swt_marker.setChecked(Utils.getMarkers(getContext()));
+        swt_marker.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Utils.setMarkers(context, isChecked);
             }
         });
 

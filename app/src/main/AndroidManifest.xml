@@ -38,6 +38,12 @@
             android:label="@string/app_name"
             android:theme="@style/SplashTheme"
             android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name=".notification_stop" />
+                <action android:name=".notification_pause" />
+                <action android:name=".notification_resume"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <service

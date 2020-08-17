@@ -11,7 +11,6 @@ import androidx.fragment.app.Fragment;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
-import com.jjoe64.graphview.LabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -20,10 +19,8 @@ import java.util.ArrayList;
 public class ElevationFragment extends Fragment {
 
     GraphView graphView;
-    private MainActivity mainActivity;
     private LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
-
-    public void setMainActivity(MainActivity mainActivity){this.mainActivity = mainActivity;}
+    private static final double DISTANCE_TO_CALCULATE_IN_KM = 0.1;
 
     public ElevationFragment(){
         series.setColor(Color.BLACK);
@@ -38,8 +35,8 @@ public class ElevationFragment extends Fragment {
         graphView.onDataChanged(true,true);
         graphView.addSeries(series);
         graphView.setBackgroundColor(Color.TRANSPARENT);
-        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Distancia [KM]");
-        graphView.getGridLabelRenderer().setVerticalAxisTitle("Altitud [MTS]");
+        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Distancia en kilómetros");
+        graphView.getGridLabelRenderer().setVerticalLabelsVisible(false);
         graphView.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.HORIZONTAL);
 
         return rootView;
@@ -51,8 +48,22 @@ public class ElevationFragment extends Fragment {
 
     public void setPoints(ArrayList<PolyNode> polyNodes){
         resetPoints();
+        double acuDist = 0;
+        double acuAltitude = 0;
+        int nodesCount = 0;
         for (int i = 0; i < polyNodes.size(); i++) {
-            series.appendData(new DataPoint(polyNodes.get(i).getDistance(), polyNodes.get(i).getAltitude()), true, Integer.MAX_VALUE);
+            double distAnt = 0;
+            if (i > 0)
+                distAnt = polyNodes.get(i - 1).getDistance();
+            acuDist += polyNodes.get(i).getDistance() - distAnt;
+            acuAltitude += polyNodes.get(i).getAltitude();
+            nodesCount += 1;
+            if (acuDist >= DISTANCE_TO_CALCULATE_IN_KM) {
+                series.appendData(new DataPoint(polyNodes.get(i).getDistance(), acuAltitude / nodesCount), true, Integer.MAX_VALUE);
+                acuDist = 0;
+                acuAltitude = 0;
+                nodesCount = 0;
+            }
         }
     }
 
