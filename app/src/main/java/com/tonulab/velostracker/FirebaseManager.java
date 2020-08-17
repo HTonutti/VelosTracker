@@ -62,7 +62,6 @@ public final class FirebaseManager {
                         Log.i(TAG, "Registro guardado satisfactoriamente");
                 }
             });
-            historicFragment.setRegisters(registers);
         }
         else
             Log.e(TAG, "Problema con el id de usuario al escribir en la base de datos");

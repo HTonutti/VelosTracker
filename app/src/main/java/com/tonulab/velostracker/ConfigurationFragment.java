@@ -13,6 +13,7 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 
 import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
@@ -27,9 +28,9 @@ public class ConfigurationFragment extends Fragment implements
     private MainActivity mainActivity;
     private Context context;
 
-    Switch swt_follow;
-    Switch swt_pause;
-    Switch swt_marker;
+    SwitchCompat swt_follow;
+    SwitchCompat swt_pause;
+    SwitchCompat swt_marker;
     AppCompatImageButton btn_mode;
     AppCompatImageButton btn_logout;
 
