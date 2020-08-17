@@ -109,12 +109,13 @@
             app:menu="@menu/navigation_bar_menu" />
     </FrameLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_stop"
         android:layout_width="100sp"
         android:layout_height="wrap_content"
         android:layout_gravity="start"
         android:background="@drawable/rounded_corner_stop"
+        app:backgroundTint="@color/colorAccent"
         android:text="@string/detener_main"
         android:textColor="@color/colorText"
         android:textSize="@dimen/text_size_stop"

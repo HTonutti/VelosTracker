@@ -1,12 +1,14 @@
 package com.tonulab.velostracker;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.InflateException;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -79,21 +82,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         } else {
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
+            getLastLocation();
 
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
-            fusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null && startLocation && lastViewedLocation == null){
-                                setLat(location.getLatitude());
-                                setLon(location.getLongitude());
-                                moveCamera();
-                            } else
-                                startLocation = true;
-                        }
-                    });
             if (lastViewedLocation != null && startLocation)
                 mMap.moveCamera(CameraUpdateFactory.newCameraPosition(lastViewedLocation));
         }
@@ -126,6 +116,34 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         return mMap != null;
     }
 
+    @SuppressLint("MissingPermission")
+    private void getLastLocation() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            if (startLocation && lastViewedLocation == null) {
+                                setLat(location.getLatitude());
+                                setLon(location.getLongitude());
+                                moveCamera();
+                            } else
+                                startLocation = true;
+                        } else {
+                            final Runnable r = new Runnable() {
+                                public void run() {
+                                    getLastLocation();
+                                }
+                            };
+                            Handler handler = new Handler();
+                            handler.postDelayed(r, 100);
+                        }
+                    }
+                });
+    }
+
     public void setStartLocation(boolean startLocation){
         this.startLocation = startLocation;
     }
@@ -146,7 +164,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     public void addMarkers() {
         float presentGoalDistance = DISTANCE_BETWEEN_MARKERS;
-        BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.mipmap.ic_marker,null);
+        BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.mipmap.ic_marker, null);
         Bitmap smallMarker = Bitmap.createScaledBitmap(bitmapdraw.getBitmap(), 70, 70, false);
         for (int i = 0; i < polyNodeArray.size(); i++) {
             if (polyNodeArray.get(i).getDistance() >= presentGoalDistance) {

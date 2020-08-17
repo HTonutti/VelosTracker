@@ -324,7 +324,7 @@ public class LocationUpdatesService extends Service implements
 
     public void requestDataPack(){
         Intent intent = new Intent(ACTION_BROADCAST);
-        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
+        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, Utils.getMode(this), polyNodeArray));
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         if (!Utils.getUpdateState(this))
             stopSelf();
@@ -575,7 +575,7 @@ public class LocationUpdatesService extends Service implements
         }catch (ArithmeticException ae) {
             System.out.println("ArithmeticException: " + ae.getMessage());
         }
-        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate, String.valueOf(avg), polyNodeArray);
+        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate, String.valueOf(avg), Utils.getMode(this), polyNodeArray);
         firebaseManager.writeOnFirebase(reg);
     }
 
@@ -603,7 +603,7 @@ public class LocationUpdatesService extends Service implements
 
             // Notify anyone listening for broadcasts about the new location.
             Intent intent = new Intent(ACTION_BROADCAST);
-            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, polyNodeArray));
+            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, Utils.getMode(getApplicationContext()), polyNodeArray));
             LocalBroadcastManager.getInstance(LocationUpdatesService.this).sendBroadcast(intent);
 
             // Update notification content if running as a foreground service.

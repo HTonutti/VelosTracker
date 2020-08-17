@@ -11,15 +11,17 @@ public class DataPack implements Parcelable {
     public String time;
     public String date;
     public String average;
+    public String mode;
     public ArrayList<PolyNode> polyline;
 
     public DataPack(){}
 
-    public DataPack(String distance, String time, String date, String average, ArrayList<PolyNode> polyline){
+    public DataPack(String distance, String time, String date, String average, String mode, ArrayList<PolyNode> polyline){
         this.distance = distance;
         this.time = time;
         this.date = date;
         this.average = average;
+        this.mode = mode;
         this.polyline = polyline;
     }
 
@@ -28,6 +30,7 @@ public class DataPack implements Parcelable {
         time = in.readString();
         date = in.readString();
         average = in.readString();
+        mode = in.readString();
         polyline = in.createTypedArrayList(PolyNode.CREATOR);
     }
 
@@ -54,6 +57,7 @@ public class DataPack implements Parcelable {
         dest.writeString(time);
         dest.writeString(date);
         dest.writeString(average);
+        dest.writeString(mode);
         dest.writeTypedList(polyline);
     }
 
@@ -64,6 +68,8 @@ public class DataPack implements Parcelable {
     public String getDate(){ return date; }
 
     public String getAverage(){ return average; }
+
+    public String getMode() { return mode; }
 
     public ArrayList<PolyNode> getPolyline(){ return polyline; }
 
@@ -82,6 +88,8 @@ public class DataPack implements Parcelable {
     public void setAverage(String average) {
         this.average = average;
     }
+
+    public void setMode(String mode) { this.mode = mode;    }
 
     public void setPolyline(ArrayList<PolyNode> polyline) {
         this.polyline = polyline;

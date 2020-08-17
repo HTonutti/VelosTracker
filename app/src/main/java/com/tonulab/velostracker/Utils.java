@@ -44,6 +44,7 @@ class Utils {
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
     static private String selectedMode = CICLISMO.toString();
+    static AlertDialog alertDialog;
 
 
     static boolean getUpdateState(Context context) {
@@ -174,20 +175,26 @@ class Utils {
     static boolean checkGPSState(final Context context){
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
-            new AlertDialog.Builder(context, R.style.AlertDialogCustom)
+            createAlertDialog(context);
+            return false;
+        }
+        return true;
+    }
+
+    private static void createAlertDialog(final Context context){
+        if (alertDialog == null) {
+            alertDialog = new AlertDialog.Builder(context, R.style.AlertDialogCustom)
                     .setTitle(R.string.gps_not_found_title)  // GPS not found
                     .setMessage(R.string.gps_not_found_message) // Want to enable?
                     .setCancelable(false)
                     .setPositiveButton(R.string.location_settings_yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.cancel();
-//                            context.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            context.startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            dialogInterface.dismiss();
                         }
                     })
                     .show();
-            return false;
         }
-        return true;
     }
 
 }

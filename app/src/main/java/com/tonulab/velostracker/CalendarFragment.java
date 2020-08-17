@@ -14,6 +14,8 @@ import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 import com.prolificinteractive.materialcalendarview.OnMonthChangedListener;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,7 +53,7 @@ public class CalendarFragment extends Fragment {
         if(selectedDate == null) {
             selectedDate = CalendarDay.today();
         }
-        
+
         if (dataPackVector.size() > 0)
             refreshAll(selectedDate);
 
@@ -83,21 +85,21 @@ public class CalendarFragment extends Fragment {
 
     private void refreshDayAndWeek(int year, int month, int dayOfMonth){
         double acuDistDay = 0D;
-        double acuAvgDay = 0D;
+        double acuTimeDay = 0D;
         int cantDay = 0;
         double acuDistWeek = 0D;
-        double acuAvgWeek = 0D;
+        double acuTimeWeek = 0D;
         int cantWeek = 0;
         for(int i = 0; i < dataPackVector.size(); i++) {
             ArrayList<Integer> auxDate = decomposeDate(dataPackVector.get(i).getDate());
             if(inSameWeek(auxDate.get(2), auxDate.get(1), auxDate.get(0), year, month, dayOfMonth)){
                 acuDistWeek += Double.parseDouble(dataPackVector.get(i).distance);
-                acuAvgWeek += Double.parseDouble(dataPackVector.get(i).average);
+                acuTimeWeek += Double.parseDouble(dataPackVector.get(i).time);
                 cantWeek += 1;
 
                 if(auxDate.get(0).equals(dayOfMonth) && auxDate.get(1).equals(month) && auxDate.get(2).equals(year)){
                     acuDistDay += Double.parseDouble(dataPackVector.get(i).distance);
-                    acuAvgDay += Double.parseDouble(dataPackVector.get(i).average);
+                    acuTimeDay += Double.parseDouble(dataPackVector.get(i).time);
                     cantDay += 1;
                 }
             }
@@ -105,48 +107,48 @@ public class CalendarFragment extends Fragment {
 
         txt_day_dist.setText(trimValue(acuDistDay));
         if (cantDay != 0)
-            txt_day_avg.setText(trimValue(acuAvgDay/(double)cantDay));
+            txt_day_avg.setText(String.valueOf(calculateAverage(acuDistDay, acuTimeDay)));
         else
             txt_day_avg.setText(String.valueOf(0).concat(".00"));
 
         txt_week_dist.setText(trimValue(acuDistWeek));
         if (cantWeek != 0)
-            txt_week_avg.setText(trimValue(acuAvgWeek/(double)cantWeek));
+            txt_week_avg.setText(String.valueOf(calculateAverage(acuDistWeek, acuTimeWeek)));
         else
             txt_week_avg.setText(String.valueOf(0).concat(".00"));
     }
 
     private void refreshMonth(int year, int month){
         double acuDist = 0D;
-        double acuAvg = 0D;
+        double acuTime = 0D;
         int cant = 0;
         for(int i = 0; i < dataPackVector.size(); i++) {
             ArrayList<Integer> auxDate = decomposeDate(dataPackVector.get(i).getDate());
             if(auxDate.get(1).equals(month) && auxDate.get(2).equals(year)){
                 acuDist += Double.parseDouble(dataPackVector.get(i).distance);
-                acuAvg += Double.parseDouble(dataPackVector.get(i).average);
+                acuTime += Double.parseDouble(dataPackVector.get(i).time);
                 cant += 1;
             }
         }
         txt_month_dist.setText(trimValue(acuDist));
         if (cant != 0)
-            txt_month_avg.setText(trimValue(acuAvg/(double)cant));
+            txt_month_avg.setText(String.valueOf(calculateAverage(acuDist, acuTime)));
         else
             txt_month_avg.setText(String.valueOf(0).concat(".00"));
     }
 
     private void refreshTotal(){
         double acuDist = 0D;
-        double acuAvg = 0D;
+        double acuTime = 0D;
         int cant = 0;
         for(int i = 0; i < dataPackVector.size(); i++) {
             acuDist += Double.parseDouble(dataPackVector.get(i).distance);
-            acuAvg += Double.parseDouble(dataPackVector.get(i).average);
+            acuTime += Double.parseDouble(dataPackVector.get(i).time);
             cant += 1;
         }
         txt_total_dist.setText(trimValue(acuDist));
         if (cant != 0)
-            txt_total_avg.setText(trimValue(acuAvg/(double)cant));
+            txt_total_avg.setText(String.valueOf(calculateAverage(acuDist, acuTime)));
         else
             txt_total_avg.setText(String.valueOf(0).concat(".00"));
     }
@@ -181,6 +183,12 @@ public class CalendarFragment extends Fragment {
 
     private String composeDate(int year, int month, int dayOfMonth){
         return dayOfMonth+"/"+month+"/"+String.valueOf(year).substring(2);
+    }
+
+    private Double calculateAverage(Double distance, Double time){
+        BigDecimal auxDistance = BigDecimal.valueOf(distance);
+        BigDecimal avg = auxDistance.multiply(BigDecimal.valueOf(3600)).divide(BigDecimal.valueOf(time), 1, RoundingMode.HALF_DOWN);
+        return avg.doubleValue();
     }
 
     public boolean inSameWeek(int year1, int month1, int dayOfMonth1, int year2, int month2, int dayOfMonth2) {

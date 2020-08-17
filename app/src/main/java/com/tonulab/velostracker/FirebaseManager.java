@@ -88,8 +88,12 @@ public final class FirebaseManager {
                                 DataPack data = auxSnapshot.getValue(DataPack.class);
                                 String key = snapshot.getKey();
                                 contRegRead += 1;
+                                int auxSize = registers.size();
                                 registers.put(key, data);
-                                rawDataPack.add(data);
+                                // En caso de que se lea concurrentemente registers no agrega repetidos por las key, por lo que si este no agrega
+                                // tampoco debe hacerlos rawDataPack que solo guarda datos
+                                if (auxSize != registers.size())
+                                    rawDataPack.add(data);
                                 if (contRegRead == nroReg) {
                                     historicFragment.setRegisters(registers);
                                     calendarFragment.setRegisters(rawDataPack);
