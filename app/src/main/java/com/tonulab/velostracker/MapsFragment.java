@@ -80,6 +80,21 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
         } else {
+            mMap.setMapType(Utils.getMapType(getContext()));
+            mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                @Override
+                public void onMapLongClick(LatLng latLng) {
+                    if (mMap.getMapType() == GoogleMap.MAP_TYPE_NORMAL) {
+                        Utils.setMapType(getContext(), GoogleMap.MAP_TYPE_HYBRID);
+                        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                    }
+                    else{
+                        Utils.setMapType(getContext(), GoogleMap.MAP_TYPE_NORMAL);
+                        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                    }
+
+                }
+            });
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
             getLastLocation();

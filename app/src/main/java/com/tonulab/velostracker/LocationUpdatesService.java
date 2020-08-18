@@ -200,6 +200,7 @@ public class LocationUpdatesService extends Service implements
         if (startedFromNotification) {
             Intent intentAct = new Intent(this, MainActivity.class);
             intentAct.putExtra("showHistoricTab", true);
+            intentAct.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intentAct);
             Intent intentCloseNoticationPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
             getApplicationContext().sendBroadcast(intentCloseNoticationPanel);
