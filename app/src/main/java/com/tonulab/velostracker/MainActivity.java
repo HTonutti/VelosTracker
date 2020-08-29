@@ -24,6 +24,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean showMarkers = false;
 
     private ArrayList<PolyNode> polyNodeArray = null;
+    private ArrayList<Integer> pauseNodes = null;
     private Stack<Integer> stackMenu = new Stack<>();
 
 
@@ -434,11 +436,13 @@ public class MainActivity extends AppCompatActivity implements
         }
         else if (key.equals(Utils.MARKERS)){
             showMarkers = (sharedPreferences.getBoolean(Utils.MARKERS, false));
+            Log.i(TAG, "To show state: " + String.valueOf(toShow));
+            Log.i(TAG, "Show markers state : " + String.valueOf(showMarkers));
             if (toShow){
                 if (showMarkers)
                     mapsFragment.addMarkers();
                 else{
-                    mapsFragment.updatePolyline(null);
+                    mapsFragment.updatePolyline(null, null);
                 }
             }
         }
@@ -450,9 +454,9 @@ public class MainActivity extends AppCompatActivity implements
 
     private void setButtonImage(boolean state){
         if (state)
-            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
+            bPlay.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play, getTheme()));
         else
-            bPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+            bPlay.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_pause, getTheme()));
     }
 
     private void setStopButtonVisibility(){
@@ -508,9 +512,10 @@ public class MainActivity extends AppCompatActivity implements
         this.distance = distance;
     }
 
-    public void updatePolyline(ArrayList<PolyNode> polyNodeArray){
+    public void updatePolyline(ArrayList<PolyNode> polyNodeArray, ArrayList<Integer> pauseNodes){
         this.polyNodeArray = polyNodeArray;
-        mapsFragment.updatePolyline(this.polyNodeArray);
+        this.pauseNodes = pauseNodes;
+        mapsFragment.updatePolyline(this.polyNodeArray, this.pauseNodes);
     }
 
     public void updateDataPack(DataPack dataPack){
@@ -518,7 +523,7 @@ public class MainActivity extends AppCompatActivity implements
         updateDistance(dataPack.getDistance());
         if (dataPack.getPolyline() != null){
             if (dataPack.getPolyline().size() > 0){
-                updatePolyline(dataPack.getPolyline());
+                updatePolyline(dataPack.getPolyline(), dataPack.getPause());
 //                elevationFragment.setPoints(polyNodeArray);
             }
         }

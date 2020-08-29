@@ -28,13 +28,11 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
@@ -49,6 +47,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private boolean startLocation = true;
     ArrayList<PolyNode> polyNodeArray = new ArrayList<>();
+    ArrayList<Integer> pauseNodes = new ArrayList<>();
 
     private View view;
 
@@ -163,16 +162,42 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         this.startLocation = startLocation;
     }
 
-    public void updatePolyline(ArrayList<PolyNode> PolyNodeArray){
+    public void updatePolyline(ArrayList<PolyNode> PolyNodeArray, ArrayList<Integer> PauseNodes){
         if (PolyNodeArray != null)
             polyNodeArray = PolyNodeArray;
+        if (PauseNodes != null)
+            pauseNodes = PauseNodes;
+
         if (getMapState()){
-            PolylineOptions polyline = new PolylineOptions().width(15).color(Color.RED);
-            for (int i = 0; i < polyNodeArray.size(); i++) {
-                polyline.add(new LatLng(polyNodeArray.get(i).getLatitude(), polyNodeArray.get(i).getLongitude()) );
-            }
             clearMap();
-            mMap.addPolyline(polyline);
+            if (pauseNodes.size() != 0){
+                int init;
+                int end;
+                for (int j = 0; j < pauseNodes.size(); j++) {
+                    PolylineOptions polyline = new PolylineOptions().width(15).color(Color.RED);
+                    if (j == 0)
+                        init = 0;
+                    else
+                        init = pauseNodes.get(j - 1);
+
+                    if (j == pauseNodes.size() - 1)
+                        end = polyNodeArray.size();
+                    else
+                        end = pauseNodes.get(j);
+
+                    for (int i = init; i < end; i++) {
+                        polyline.add(new LatLng(polyNodeArray.get(i).getLatitude(), polyNodeArray.get(i).getLongitude()) );
+                    }
+                    mMap.addPolyline(polyline);
+                }
+            }
+            else{
+                PolylineOptions polyline = new PolylineOptions().width(15).color(Color.RED);
+                for (int i = 0; i < polyNodeArray.size(); i++) {
+                    polyline.add(new LatLng(polyNodeArray.get(i).getLatitude(), polyNodeArray.get(i).getLongitude()) );
+                }
+                mMap.addPolyline(polyline);
+            }
         }
 
     }

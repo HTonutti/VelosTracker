@@ -30,7 +30,6 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -78,6 +77,7 @@ public class LocationUpdatesService extends Service implements
     private static float MINIMUN_DISTANCE_TO_REFRESH;
     private static final float MINIMUN_DISTANCE_TO_PAUSE_TIME = 3.0f;
     private static final long TIME_TO_PAUSE_IN_MILLISECONDS = 10000;
+    private static final long TIME_WITHOUT_NEW_LOCATIONS = 30000;
 
     // Idetificador para la notificacion del servicio cuando esta en primer plano
     private static final int NOTIFICATION_ID = 12345678;
@@ -101,6 +101,7 @@ public class LocationUpdatesService extends Service implements
     private static Location antLocation;
 
     private static ArrayList<PolyNode> polyNodeArray;
+    private static ArrayList<Integer> pauseNodes;
     private static BigDecimal realDistance = BigDecimal.valueOf(0);
     private static Double roundedDistance = 0D;
     private static String startDate;
@@ -109,6 +110,7 @@ public class LocationUpdatesService extends Service implements
     private static Long startTime = 0L;
     private static Long currentTime = 0L;
     private static Long accumulatedTime = 0L;
+    private static Long timeLastLocation = 0L;
 
     private static boolean firstTime = false;
 
@@ -188,6 +190,8 @@ public class LocationUpdatesService extends Service implements
         if (timer != null)
             timer.cancel();
         accumulatedTime = currentTime;
+        if (!pauseNodes.contains(polyNodeArray.size() - 1))
+            pauseNodes.add(polyNodeArray.size() - 1);
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
     }
 
@@ -216,6 +220,8 @@ public class LocationUpdatesService extends Service implements
         startTime = System.currentTimeMillis();
         roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
         currentTime = accumulatedTime;
+        locationsForLeisurely = new LinkedList<>();
+        antLocation = null;
         requestLocationUpdates();
     }
 
@@ -228,9 +234,11 @@ public class LocationUpdatesService extends Service implements
         realDistance = BigDecimal.valueOf(0);
         roundedDistance = 0D;
         polyNodeArray = new ArrayList<>();
+        pauseNodes = new ArrayList<>();
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         startDate = DFormat.format(new Date());
         locationsForLeisurely = new LinkedList<>();
+        antLocation = null;
         leisurelyTime = false;
         beganLeisurelyTime = false;
         MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
@@ -325,7 +333,8 @@ public class LocationUpdatesService extends Service implements
 
     public void requestDataPack(){
         Intent intent = new Intent(ACTION_BROADCAST);
-        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, Utils.getMode(this), polyNodeArray));
+        intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime),
+                startDate, null, Utils.getMode(this), pauseNodes, polyNodeArray));
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         if (!Utils.getUpdateState(this))
             stopSelf();
@@ -399,6 +408,7 @@ public class LocationUpdatesService extends Service implements
         // Notify anyone listening for broadcasts about the new location.
         Intent intent = new Intent(ACTION_BROADCAST);
 
+        timeLastLocation = System.currentTimeMillis();
         if (locationsForLeisurely.size() >= numberOfLocationToSave) {
             locationsForLeisurely.poll();
         }
@@ -523,7 +533,8 @@ public class LocationUpdatesService extends Service implements
     private void manageLeisurelyTime(){
         if (Utils.getLeisurelyTime(this) && !Utils.getPausedState(this)){
             Float distance = calculateCloseness();
-            if (distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation){
+            if ((distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation) &&
+                    (System.currentTimeMillis() - timeLastLocation < TIME_WITHOUT_NEW_LOCATIONS)){
                 if (!beganLeisurelyTime){
                     startLeisurelyTime = System.currentTimeMillis();
                     beganLeisurelyTime = true;
@@ -576,7 +587,8 @@ public class LocationUpdatesService extends Service implements
         }catch (ArithmeticException ae) {
             System.out.println("ArithmeticException: " + ae.getMessage());
         }
-        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate, String.valueOf(avg), Utils.getMode(this), polyNodeArray);
+        DataPack reg = new DataPack(roundedDistance.toString(), String.valueOf(currentTime), startDate,
+                String.valueOf(avg), Utils.getMode(this), pauseNodes, polyNodeArray);
         firebaseManager.writeOnFirebase(reg);
     }
 
@@ -604,7 +616,8 @@ public class LocationUpdatesService extends Service implements
 
             // Notify anyone listening for broadcasts about the new location.
             Intent intent = new Intent(ACTION_BROADCAST);
-            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate, null, Utils.getMode(getApplicationContext()), polyNodeArray));
+            intent.putExtra(EXTRA_DATAPACK, new DataPack(String.valueOf(roundedDistance), String.valueOf(currentTime), startDate,
+                    null, Utils.getMode(getApplicationContext()), pauseNodes, polyNodeArray));
             LocalBroadcastManager.getInstance(LocationUpdatesService.this).sendBroadcast(intent);
 
             // Update notification content if running as a foreground service.
