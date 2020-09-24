@@ -2,6 +2,8 @@ package com.tonulab.velostracker;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -15,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
@@ -37,6 +40,8 @@ import java.util.ArrayList;
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private Context mContext;
+    private Activity mActivity;
 
     static float DISTANCE_BETWEEN_MARKERS = 1f;
     //Latitud y longitud de donde se situa la camara
@@ -49,24 +54,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     ArrayList<PolyNode> polyNodeArray = new ArrayList<>();
     ArrayList<Integer> pauseNodes = new ArrayList<>();
 
+    private BitmapDrawable bitmapdraw;
     private View view;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         if (view != null) {
             ViewGroup parent = (ViewGroup) view.getParent();
             if (parent != null)
                 parent.removeView(view);
         }
-        try {
-            view = inflater.inflate(R.layout.maps, container, false);
-        } catch (InflateException e) {
-            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+        view = inflater.inflate(R.layout.maps, container, false);
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
         this.lat = 0;
         this.lon = 0;
+        bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(mContext.getResources(), R.mipmap.ic_marker, null);
 
         return view;
     }
@@ -74,10 +79,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+            ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
         } else {
             mMap.setMapType(Utils.getMapType(getContext()));
             mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
@@ -103,6 +108,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    public void setContext(Context mContext) {
+        this.mContext = mContext;
+    }
+
+    public void setActivity(Activity mActivity) {
+        this.mActivity = mActivity;
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -118,23 +131,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         this.lon = l;
     }
 
-    public double getLat() {
-        return this.lat;
-    }
-
-    public double getLon() {
-        return this.lon;
-    }
-
     public boolean getMapState() {
         return mMap != null;
     }
 
     @SuppressLint("MissingPermission")
     private void getLastLocation() {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(mContext);
         fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
+                .addOnSuccessListener(mActivity, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                         // Got last known location. In some rare situations this can be null.
@@ -204,7 +209,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     public void addMarkers() {
         float presentGoalDistance = DISTANCE_BETWEEN_MARKERS;
-        BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.mipmap.ic_marker, null);
         Bitmap smallMarker = Bitmap.createScaledBitmap(bitmapdraw.getBitmap(), 70, 70, false);
         for (int i = 0; i < polyNodeArray.size(); i++) {
             if (polyNodeArray.get(i).getDistance() >= presentGoalDistance) {

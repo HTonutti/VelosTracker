@@ -147,6 +147,8 @@ public class MainActivity extends AppCompatActivity implements
 
     private void inicialization() {
         mapsFragment = new MapsFragment();
+        mapsFragment.setActivity(this);
+        mapsFragment.setContext(this);
 
         configurationFragment = new ConfigurationFragment();
         configurationFragment.setMainActivity(this);
