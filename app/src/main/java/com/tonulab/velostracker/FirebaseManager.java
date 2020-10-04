@@ -42,6 +42,7 @@ public final class FirebaseManager {
     }
 
     private FirebaseManager(){
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
         mDatabase = FirebaseDatabase.getInstance().getReference();
     }
 
