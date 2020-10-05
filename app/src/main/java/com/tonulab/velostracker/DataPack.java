@@ -3,6 +3,7 @@ package com.tonulab.velostracker;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class DataPack implements Parcelable {
@@ -12,16 +13,18 @@ public class DataPack implements Parcelable {
     public String date;
     public String average;
     public String mode;
+    public ArrayList<Integer> pause;
     public ArrayList<PolyNode> polyline;
 
     public DataPack(){}
 
-    public DataPack(String distance, String time, String date, String average, String mode, ArrayList<PolyNode> polyline){
+    public DataPack(String distance, String time, String date, String average, String mode, ArrayList<Integer> pause, ArrayList<PolyNode> polyline){
         this.distance = distance;
         this.time = time;
         this.date = date;
         this.average = average;
         this.mode = mode;
+        this.pause = pause;
         this.polyline = polyline;
     }
 
@@ -31,6 +34,7 @@ public class DataPack implements Parcelable {
         date = in.readString();
         average = in.readString();
         mode = in.readString();
+        in.readList(pause, Integer.class.getClassLoader());
         polyline = in.createTypedArrayList(PolyNode.CREATOR);
     }
 
@@ -58,6 +62,7 @@ public class DataPack implements Parcelable {
         dest.writeString(date);
         dest.writeString(average);
         dest.writeString(mode);
+        dest.writeList(pause);
         dest.writeTypedList(polyline);
     }
 
@@ -72,6 +77,8 @@ public class DataPack implements Parcelable {
     public String getMode() { return mode; }
 
     public ArrayList<PolyNode> getPolyline(){ return polyline; }
+
+    public ArrayList<Integer> getPause() { return pause;}
 
     public void setDistance(String distance) {
         this.distance = distance;
@@ -89,7 +96,9 @@ public class DataPack implements Parcelable {
         this.average = average;
     }
 
-    public void setMode(String mode) { this.mode = mode;    }
+    public void setMode(String mode) { this.mode = mode; }
+
+    public void setPause(ArrayList<Integer> pause) { this.pause = pause; }
 
     public void setPolyline(ArrayList<PolyNode> polyline) {
         this.polyline = polyline;

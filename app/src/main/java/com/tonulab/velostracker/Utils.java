@@ -8,6 +8,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.CameraPosition;
 
 import java.math.BigDecimal;
@@ -43,6 +44,7 @@ class Utils {
     static final String MARKERS = "markers";
     static final String AUTH_PROVIDER = "auth_provider";
     static final String USER_ID = "user_id";
+    static final String MAP_TYPE = "map_type";
     static private String selectedMode = CICLISMO.toString();
     static AlertDialog alertDialog;
 
@@ -104,6 +106,18 @@ class Utils {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putBoolean(MARKERS, markers)
+                .apply();
+    }
+
+    static int getMapType(Context context){
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getInt(MAP_TYPE, GoogleMap.MAP_TYPE_NORMAL);
+    }
+
+    static void setMapType(Context context, int mapType) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putInt(MAP_TYPE, mapType)
                 .apply();
     }
 
