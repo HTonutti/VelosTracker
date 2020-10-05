@@ -44,6 +44,8 @@ import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static java.lang.Math.abs;
+
 
 public class LocationUpdatesService extends Service implements
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -79,6 +81,9 @@ public class LocationUpdatesService extends Service implements
     private static final long TIME_TO_PAUSE_IN_MILLISECONDS = 10000;
     private static final long TIME_WITHOUT_NEW_LOCATIONS = 30000;
 
+    private static Float SPEED_LIMIT;
+    private static Float ACCELERATION_LIMIT;
+
     // Idetificador para la notificacion del servicio cuando esta en primer plano
     private static final int NOTIFICATION_ID = 12345678;
 
@@ -110,7 +115,6 @@ public class LocationUpdatesService extends Service implements
     private static Long startTime = 0L;
     private static Long currentTime = 0L;
     private static Long accumulatedTime = 0L;
-    private static Long timeLastLocation = 0L;
 
     private static boolean firstTime = false;
 
@@ -118,8 +122,11 @@ public class LocationUpdatesService extends Service implements
     private static Location locationPaused = null;
     private static boolean leisurelyTime = false;
     private static boolean beganLeisurelyTime = false;
-    private static Queue<Location> locationsForLeisurely = new LinkedList<>();
+    private static Queue<Location> lastValidsLocations = new LinkedList<>();
     private static final int numberOfLocationToSave = 5;
+
+    private static Float lastValidSpeed = null;
+    private static LinkedList<Long> timeOfLastTwoLocations = new LinkedList<>();
 
     public LocationUpdatesService() {}
 
@@ -220,7 +227,8 @@ public class LocationUpdatesService extends Service implements
         startTime = System.currentTimeMillis();
         roundedDistance = realDistance.divide(BigDecimal.valueOf(1), 2, RoundingMode.HALF_EVEN).doubleValue();
         currentTime = accumulatedTime;
-        locationsForLeisurely = new LinkedList<>();
+        lastValidsLocations = new LinkedList<>();
+        timeOfLastTwoLocations = new LinkedList<>();
         antLocation = null;
         requestLocationUpdates();
     }
@@ -237,13 +245,17 @@ public class LocationUpdatesService extends Service implements
         pauseNodes = new ArrayList<>();
         DateFormat DFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         startDate = DFormat.format(new Date());
-        locationsForLeisurely = new LinkedList<>();
+        lastValidsLocations = new LinkedList<>();
+        timeOfLastTwoLocations = new LinkedList<>();
         antLocation = null;
         leisurelyTime = false;
         beganLeisurelyTime = false;
-        MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
+
         requestLocationUpdates();
         startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
+        MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
+        SPEED_LIMIT = Utils.getSpeedLimit();
+        ACCELERATION_LIMIT = Utils.getAccelerationLimit();
     }
 
     @Override
@@ -375,7 +387,7 @@ public class LocationUpdatesService extends Service implements
                 .setContentText(text)
                 .setContentTitle(Utils.getNotificationTitle(this))
                 .setOnlyAlertOnce(true)
-                .setPriority(Notification.PRIORITY_LOW)
+                .setPriority(NotificationManager.IMPORTANCE_HIGH)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setTicker(text)
                 .setOngoing(true)
@@ -408,12 +420,33 @@ public class LocationUpdatesService extends Service implements
         // Notify anyone listening for broadcasts about the new location.
         Intent intent = new Intent(ACTION_BROADCAST);
 
-        timeLastLocation = System.currentTimeMillis();
-        if (locationsForLeisurely.size() >= numberOfLocationToSave) {
-            locationsForLeisurely.poll();
+        if (lastValidsLocations.size() > 0 && timeOfLastTwoLocations.size() > 0){
+            Float lessLastValidSpeed = lastValidSpeed;
+            long lastTimeDifference = (System.currentTimeMillis() - timeOfLastTwoLocations.getLast())/1000;
+            lastValidSpeed = distanceBetweenLocations(location, lastValidsLocations.element())/ (lastTimeDifference);
+            if (lastValidsLocations.size() > 1){
+                long lessLastTimeDifference = (timeOfLastTwoLocations.getLast() - timeOfLastTwoLocations.getFirst())/1000;
+                float acceleration = abs(lessLastValidSpeed - lastValidSpeed) / (lastTimeDifference - lessLastTimeDifference);
+                if (acceleration < ACCELERATION_LIMIT && lastValidSpeed < SPEED_LIMIT){
+                    if (lastValidsLocations.size() >= numberOfLocationToSave) {
+                        lastValidsLocations.poll();
+                    }
+                    lastValidsLocations.add(location);
+                    timeOfLastTwoLocations.set(0, timeOfLastTwoLocations.getLast());
+                    timeOfLastTwoLocations.set(1, System.currentTimeMillis());
+                    manageLeisurelyTime();
+                }
+            }
+            else if (lastValidSpeed < SPEED_LIMIT){
+                lastValidsLocations.add(location);
+                timeOfLastTwoLocations.add(System.currentTimeMillis());
+                manageLeisurelyTime();
+            }
+        } else {
+            lastValidsLocations.add(location);
+            timeOfLastTwoLocations.add(System.currentTimeMillis());
+            manageLeisurelyTime();
         }
-        locationsForLeisurely.add(location);
-        manageLeisurelyTime();
 
         refreshDistance(location);
         if (firstTime){
@@ -454,6 +487,11 @@ public class LocationUpdatesService extends Service implements
                 beganLeisurelyTime = false;
                 leisurelyTime = false;
             }
+        }
+        else if (key.equals(Utils.MODE)) {
+            MINIMUN_DISTANCE_TO_REFRESH = Utils.getMtsRefresh();
+            SPEED_LIMIT = Utils.getSpeedLimit();
+            ACCELERATION_LIMIT = Utils.getAccelerationLimit();
         }
     }
 
@@ -532,10 +570,10 @@ public class LocationUpdatesService extends Service implements
 
     private void manageLeisurelyTime(){
         if (Utils.getLeisurelyTime(this) && !Utils.getPausedState(this)){
-            Float distance = calculateCloseness();
+            Float distance = calculateCloseness((LinkedList<Location>) lastValidsLocations);
             if (distance != null){
                 if ((distance < MINIMUN_DISTANCE_TO_PAUSE_TIME || locationPaused == mLocation) &&
-                        (System.currentTimeMillis() - timeLastLocation < TIME_WITHOUT_NEW_LOCATIONS)){
+                        (System.currentTimeMillis() - timeOfLastTwoLocations.getLast() < TIME_WITHOUT_NEW_LOCATIONS)){
                     if (!beganLeisurelyTime){
                         startLeisurelyTime = System.currentTimeMillis();
                         beganLeisurelyTime = true;
@@ -553,11 +591,11 @@ public class LocationUpdatesService extends Service implements
         }
     }
 
-    private Float calculateCloseness() {
+    private Float calculateCloseness(LinkedList<Location> locations) {
         double accumLat = 0D;
         double accumLon = 0D;
-        Iterator<Location> it = locationsForLeisurely.iterator();
-        if (locationsForLeisurely.size() != 0) {
+        Iterator<Location> it = locations.iterator();
+        if (locations.size() != 0) {
             while (it.hasNext()) {
                 Location locAux = it.next();
                 if (locAux != null){
@@ -565,20 +603,20 @@ public class LocationUpdatesService extends Service implements
                     accumLon += locAux.getLongitude();
                 }
             }
-            float centerLat = (float) (accumLat / locationsForLeisurely.size());
-            float centerLon = (float) (accumLon / locationsForLeisurely.size());
+            float centerLat = (float) (accumLat / locations.size());
+            float centerLon = (float) (accumLon / locations.size());
             Location centerLoc = new Location("");
             centerLoc.setLatitude(centerLat);
             centerLoc.setLongitude(centerLon);
 
             Float accumDistance = 0F;
-            it = locationsForLeisurely.iterator();
+            it = locations.iterator();
             while (it.hasNext()) {
                 Location locAux = it.next();
                 if (locAux != null)
                     accumDistance += distanceBetweenLocations(centerLoc, locAux);
             }
-            return accumDistance / (float) locationsForLeisurely.size();
+            return accumDistance / (float) locations.size();
         }
         else return null;
     }

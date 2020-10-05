@@ -39,6 +39,11 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 
+/*
+Actividad principal encargada del layout principal, manejo de los fragments y de interactuar con
+el servicio encargado de los recorridos
+ */
+
 public class MainActivity extends AppCompatActivity implements
         SharedPreferences.OnSharedPreferenceChangeListener{
 
@@ -78,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements
     private MapsFragment mapsFragment = null;
     private HistoricFragment historicFragment = null;
     private ConfigurationFragment configurationFragment = null;
-//    private ElevationFragment elevationFragment = null;
     private CalendarFragment calendarFragment = null;
     private FragmentManager fm = getSupportFragmentManager();
 
@@ -100,7 +104,6 @@ public class MainActivity extends AppCompatActivity implements
     private boolean showMarkers = false;
 
     private ArrayList<PolyNode> polyNodeArray = null;
-    private ArrayList<Integer> pauseNodes = null;
     private Stack<Integer> stackMenu = new Stack<>();
 
 
@@ -111,24 +114,31 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
+        // Iniciliazaciones del usuario, variables, listeners, visibilidad y gps
         setUserProvider();
         inicialization();
         setListeners();
         setStopButtonVisibility();
         Utils.checkGPSState(this);
 
+        // Define el fragment con que inicia
         if (getIntent().getBooleanExtra("showHistoricTab", false))
+            // Caso que se abre desde el servicio al detener un recorrido
             navView.setSelectedItemId(R.id.menu_historic);
         else if (!checkPermissions()) {
+            // Caso que no se cuenten con los permisos necesarios
             requestPermissions();
             navView.setSelectedItemId(R.id.menu_setting);
         }
         else {
+            // Por defecto se abre el fragment del mapa
             navView.setSelectedItemId(R.id.menu_map);
         }
     }
 
     private void setUserProvider() {
+        // Obtiene el usuario y el metodo de autenticacion desde la actividad de autenticacion
+        // o desde default preferences
         if (getIntent().hasExtra(Utils.AUTH_PROVIDER) && getIntent().hasExtra(Utils.USER_ID)){
             provider = getIntent().getExtras().getString(Utils.AUTH_PROVIDER);
             userId = getIntent().getExtras().getString(Utils.USER_ID);
@@ -146,14 +156,13 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void inicialization() {
+        // Inicializaciones de todos los fragments
         mapsFragment = new MapsFragment();
         mapsFragment.setActivity(this);
         mapsFragment.setContext(this);
 
         configurationFragment = new ConfigurationFragment();
         configurationFragment.setMainActivity(this);
-
-//        elevationFragment = new ElevationFragment();
 
         receiver = new Receiver();
         receiver.setMainActivity(this);
@@ -172,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements
 
         showMarkers = Utils.getMarkers(this);
 
+        // Inicializaciones de los elementos del layout
         tracing = new ActiveVariable();
         txtDistance = findViewById(R.id.txt_dist);
         txtTime = findViewById(R.id.txt_time);
@@ -198,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements
     protected void onResume() {
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
+        // Cada vez que resumo actualizo los cuadros de textos y me fijo si el gps sigue activo
         updateTextViews();
         Utils.checkGPSState(this);
         super.onResume();
@@ -230,10 +241,12 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onBackPressed() {
+        // Cada vez que presiono atras vuelvo al ultimo fragment abierto, guardado en la pila
         boolean frag = fm.popBackStackImmediate();
         if (frag) {
             stackMenu.pop();
             if (stackMenu.size() == 0)
+                // En caso que no se tengan mas items en la pila cierro la app
                 shutdown(false);
             else
                 navView.setSelectedItemId(stackMenu.peek());
@@ -241,15 +254,21 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void setListeners(){
+        // Define los listeners del menu de navegacion, de la variable que define si hay un
+        // recorrido activo y de los botones
 
         navView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                // Checkeo el item que eliga del menu y reemplazo el fragment segun el elegido
                 int id = menuItem.getItemId();
                 menuItem.setChecked(true);
                 switch (id){
                     case R.id.menu_map: {
                         if (!(fm.findFragmentById(R.id.fragment_container) instanceof MapsFragment)) {
+                            // Actualizo la pila de fragments pero sin que se acumule el mismo
+                            // fragment muchas veces, por eso primero lo saco de la cola sin
+                            // importar su posicion y luego lo agrego al final
                             stackMenu.removeElement(id);
                             stackMenu.push(id);
                             fm.beginTransaction()
@@ -301,12 +320,16 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onChange() {
                 if (tracing.getValue()){
+                    // Si pasa a verdadera la actividad debe ponerse el boton con el logo de stop
                     setButtonImage(false);
                     if (!checkPermissions()) {
                         requestPermissions();
                     } else if(mBound){
+                        // Si estaba pausado simplemente resumo el servicio
                         if (Utils.getPausedState(getApplicationContext()))
                             mService.resumeLocationUpdate();
+                        // Si no estaba en pausa debo reiniciar las variables, detener el servicio
+                        // y empezar uno nuevo
                         else if (!Utils.getUpdateState(getApplicationContext())) {
                             toShow = false;
                             distance = "0";
@@ -319,6 +342,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
                 else if(mBound){
+                    // Si pauso simplemente defino la imagen del boton a play y le aviso al servicio
                     setButtonImage(true);
                     if (!Utils.getPausedState(getApplicationContext()) && Utils.getUpdateState(getApplicationContext())){
                         mService.pauseLocationUpdate();
@@ -330,12 +354,14 @@ public class MainActivity extends AppCompatActivity implements
         bPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Cada vez que apreto el play/pause cambio el valor de la variable activa
                 tracing.setValue(!tracing.getValue());
             }
         });
         bStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // El boton detener avisa al servicio sobre esto y carga el fragment de los registros
                 if (mBound && Utils.getUpdateState(getApplicationContext())) {
                     mService.stopLocationUpdate(false);
                     navView.setSelectedItemId(R.id.menu_historic);
@@ -429,32 +455,34 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        // Update the buttons state depending on whether location updates are being requested.
-        if (key.equals(Utils.UPDATE_STATE)) {
-            tracing.setValue(sharedPreferences.getBoolean(Utils.UPDATE_STATE,false));
-        }
-        else if (key.equals(Utils.TRACKING)){
-            setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
-        }
-        else if (key.equals(Utils.MARKERS)){
-            showMarkers = (sharedPreferences.getBoolean(Utils.MARKERS, false));
-            Log.i(TAG, "To show state: " + String.valueOf(toShow));
-            Log.i(TAG, "Show markers state : " + String.valueOf(showMarkers));
-            if (toShow){
-                if (showMarkers)
-                    mapsFragment.addMarkers();
-                else{
-                    mapsFragment.updatePolyline(null, null);
+        // Actualizo los estados
+        switch (key) {
+            case Utils.UPDATE_STATE:
+                tracing.setValue(sharedPreferences.getBoolean(Utils.UPDATE_STATE, false));
+                break;
+            case Utils.TRACKING:
+                setMapTracking(sharedPreferences.getBoolean(Utils.TRACKING, false));
+                break;
+            case Utils.MARKERS:
+                showMarkers = (sharedPreferences.getBoolean(Utils.MARKERS, false));
+                if (toShow) {
+                    // Si muestro los marcadores solamente los agrego, sino dibujo la polilinea
+                    // anteriormente guardada (al pasar null no sobre-escribe las que estaban)
+                    if (showMarkers)
+                        mapsFragment.addMarkers();
+                    else {
+                        mapsFragment.updatePolyline(null, null);
+                    }
                 }
-            }
+                break;
         }
 
         if (key.equals(Utils.UPDATE_STATE) || key.equals(Utils.PAUSED_UPDATE))
             setStopButtonVisibility();
-
     }
 
     private void setButtonImage(boolean state){
+        // Cambio la imagen del boton segun el estado de actividad
         if (state)
             bPlay.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play, getTheme()));
         else
@@ -462,6 +490,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void setStopButtonVisibility(){
+        // Seteo la visibilidad del boton para detener
         if (!Utils.getPausedState(this) && !Utils.getUpdateState(this))
             bStop.setVisibility(View.INVISIBLE);
         else
@@ -477,8 +506,9 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void showRegister(DataPack dataPack){
+        // Cuando termino un recorrido o lo cargo desde el registro a uno ya hecho debo cambiar
+        // al fragment del mapa, actualizar las variables pertinentes y dibujar la polilinea
         toShow = true;
-//        elevationFragment.resetPoints();
         mapsFragment.setStartLocation(false);
         navView.setSelectedItemId(R.id.menu_map);
         tracing.setValue(false);
@@ -486,12 +516,15 @@ public class MainActivity extends AppCompatActivity implements
         if (showMarkers)
             mapsFragment.addMarkers();
         if (dataPack.getPolyline() != null) {
+            // Tomo el primer punto del recorrido y hago que el mapa se mueva a ese punto
             Location auxLocation = new Location("");
             auxLocation.setLatitude(polyNodeArray.get(0).getLatitude());
             auxLocation.setLongitude(polyNodeArray.get(0).getLongitude());
             if (mapTracking)
                 updateLocation(auxLocation);
             else{
+                // En caso de no haber seguimiento lo activo por esa actualizacion y vuelvo a
+                // desactivarlo
                 mapTracking = true;
                 updateLocation(auxLocation);
                 mapTracking = false;
@@ -500,6 +533,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void updateLocation(Location loc){
+        // Actualizo la localizacion y muevo la camara en caso de estar el seguimiento activo
         mapsFragment.setLat(loc.getLatitude());
         mapsFragment.setLon(loc.getLongitude());
         if (mapTracking)
@@ -515,25 +549,26 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void updatePolyline(ArrayList<PolyNode> polyNodeArray, ArrayList<Integer> pauseNodes){
+        // Actualizo la polilinea y los nodos que pertenencen al inicio o fin de un tramo en caso de
+        // utilizarse la pausa
         this.polyNodeArray = polyNodeArray;
-        this.pauseNodes = pauseNodes;
-        mapsFragment.updatePolyline(this.polyNodeArray, this.pauseNodes);
+        mapsFragment.updatePolyline(this.polyNodeArray, pauseNodes);
     }
 
     public void updateDataPack(DataPack dataPack){
+        // Actualizo todas las variables y los cuadros de texto
         updateTime(Long.parseLong(dataPack.getTime()));
         updateDistance(dataPack.getDistance());
         if (dataPack.getPolyline() != null){
-            if (dataPack.getPolyline().size() > 0){
+            if (dataPack.getPolyline().size() > 0)
                 updatePolyline(dataPack.getPolyline(), dataPack.getPause());
-//                elevationFragment.setPoints(polyNodeArray);
-            }
         }
         updateAverage();
         updateTextViews();
     }
 
     private void updateAverage(){
+        // Recalculo el promedio, tengo en cuentas las posibles excepciones numericas al dividir
         try{
             if (time != 0 && !BigDecimal.valueOf(Float.parseFloat(distance)).equals(BigDecimal.valueOf(0)))
                 avg = BigDecimal.valueOf(Float.parseFloat(distance)).multiply(BigDecimal.valueOf(3600)).divide(BigDecimal.valueOf(time), 1, RoundingMode.HALF_DOWN );
@@ -545,12 +580,15 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void updateTextViews(){
+        // Actualizo todos los cuadros de textos
         txtTime.setText(DateUtils.formatElapsedTime(time));
         txtDistance.setText(distance);
         txtAvg.setText(String.valueOf(avg));
     }
 
     public void shutdown(boolean logout){
+        // En caso de deslogueo reseteo el usuario y metodo de autenticacion. Despues vuelvo a la
+        // actividad de autenticacion
         if (logout){
             FirebaseAuth.getInstance().signOut();
             PreferenceManager.getDefaultSharedPreferences(this)
@@ -560,6 +598,7 @@ public class MainActivity extends AppCompatActivity implements
                     .apply();
             this.finishAffinity();
             startActivity(new Intent(this, AuthenticationActivity.class));
+        // Si no deslogueo directamente cierro la app
         }else
             this.finishAffinity();
     }

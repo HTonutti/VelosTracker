@@ -9,7 +9,6 @@ import android.location.LocationManager;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.CameraPosition;
 
 import java.math.BigDecimal;
 
@@ -140,6 +139,22 @@ class Utils {
         if (selectedMode.equals(AUTOMOVILISMO.toString()))
             return 30.0f;
         return 10.0f;
+    }
+
+    static Float getSpeedLimit() {
+        if (selectedMode.equals(MODES.PEDESTRISMO.toString()))
+            return 6f;
+        if (selectedMode.equals(AUTOMOVILISMO.toString()))
+            return 47.27f;
+        return 22.22f;
+    }
+
+    static Float getAccelerationLimit() {
+        if (selectedMode.equals(MODES.PEDESTRISMO.toString()))
+            return 4f;
+        if (selectedMode.equals(AUTOMOVILISMO.toString()))
+            return 11.19f;
+        return 6f;
     }
 
     static String getLocationText(Location location) {

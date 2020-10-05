@@ -131,7 +131,6 @@ public class HistoricFragment extends Fragment {
             ListAdapter listAdapter = new ArrayAdapter<>(getContext(), R.layout.list_empty_item, R.id.textview, auxArray);
             listView.setAdapter(listAdapter);
         }
-
     }
 
     private void setListerners(){
