@@ -3,11 +3,11 @@
  Entre otras funcionalidades importantes destaca la autenticación, el calendario para poder visualizar la distancia y el promedio de velocidad en las distintas fechas, la pausa automática que detiene las actualizaciones de ubicación y tiempo al parar por unos segundos, y distintas opciones de visualización del tipo de mapa y marcadores.
  Tanto para la autenticación como el guardado de los datos se produce a través de Google Firebase.
 
-# Ejemplos
+# Muestras
  Capturas de pantalla de las distintas pantallas y funcionalidades brindadas:
 * Autenticación
 
- <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Authentication.png" height="550" width="320" >
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Authentication.png" height="550" width="320" >
  
 * Mapa de inicio
 
