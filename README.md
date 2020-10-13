@@ -5,17 +5,17 @@
 
 # Ejemplos
  Capturas de pantalla de las distintas pantallas y funcionalidades brindadas:
- - Autenticación
+ * Autenticación
  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Authentication.png" height="550" width="320" >
- - Mapa de inicio
+ * Mapa de inicio
   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map1.png" height="550" width="320" >
- - Registros
+ * Registros
   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Registers.png" height="550" width="320" >
- - Muestra de un registro en el mapa
+ * Muestra de un registro en el mapa
    <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map2.png" height="550" width="320" >
- - Calendario
+ * Calendario
   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Calendar.png" height="550" width="320" >
- - Configuración
+ * Configuración
   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Configuration.png" height="550" width="320" >
- - Notificación
+ * Notificación
   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Notification.png" height="570" width="320" >
