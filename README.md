@@ -5,17 +5,17 @@
 
 # Ejemplos
  Capturas de pantalla de las distintas pantallas y funcionalidades brindadas:
- -Autenticación
- <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Authentication.png" height="320" width="550" >
- -Mapa de inicio
-  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map1.png" height="320" width="550" >
- -Registros
-  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Registers.png" height="320" width="550" >
-  -Muestra de un registro en el mapa
-   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map2.png" height="320" width="550" >
- -Calendario
-  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Calendar.png" height="320" width="550" >
- -Configuración
-  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Configuration.png" height="320" width="550" >
- -Notificación
-  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Notification.png" height="320" width="570" >
+ - Autenticación
+ <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Authentication.png" height="550" width="320" >
+ - Mapa de inicio
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map1.png" height="550" width="320" >
+ - Registros
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Registers.png" height="550" width="320" >
+ - Muestra de un registro en el mapa
+   <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Map2.png" height="550" width="320" >
+ - Calendario
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Calendar.png" height="550" width="320" >
+ - Configuración
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Configuration.png" height="550" width="320" >
+ - Notificación
+  <img src="https://github.com/HTonutti/VelosTracker/blob/master/imgs/Notification.png" height="570" width="320" >
