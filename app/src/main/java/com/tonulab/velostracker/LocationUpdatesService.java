@@ -594,29 +594,31 @@ public class LocationUpdatesService extends Service implements
     private Float calculateCloseness(LinkedList<Location> locations) {
         double accumLat = 0D;
         double accumLon = 0D;
-        Iterator<Location> it = locations.iterator();
-        if (locations.size() != 0) {
-            while (it.hasNext()) {
-                Location locAux = it.next();
-                if (locAux != null){
-                    accumLat += locAux.getLatitude();
-                    accumLon += locAux.getLongitude();
+
+        Location[] locationsArray = new Location[locations.size()];
+        locations.toArray(locationsArray);
+
+        if (locationsArray.length > 0) {
+            for (Location location : locationsArray) {
+                if (location != null) {
+                    accumLat += location.getLatitude();
+                    accumLon += location.getLongitude();
                 }
             }
-            float centerLat = (float) (accumLat / locations.size());
-            float centerLon = (float) (accumLon / locations.size());
+
+            float centerLat = (float) (accumLat / locationsArray.length);
+            float centerLon = (float) (accumLon / locationsArray.length);
             Location centerLoc = new Location("");
             centerLoc.setLatitude(centerLat);
             centerLoc.setLongitude(centerLon);
 
             Float accumDistance = 0F;
-            it = locations.iterator();
-            while (it.hasNext()) {
-                Location locAux = it.next();
-                if (locAux != null)
-                    accumDistance += distanceBetweenLocations(centerLoc, locAux);
+            for (Location location : locationsArray) {
+                if (location != null) {
+                    accumDistance += distanceBetweenLocations(centerLoc, location);
+                }
             }
-            return accumDistance / (float) locations.size();
+            return accumDistance / (float) locationsArray.length;
         }
         else return null;
     }
